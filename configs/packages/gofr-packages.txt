@@ -1,0 +1,31 @@
+# Core Fedora Workstation Base
+@core
+@workstation-product-environment
+kernel-cachyos
+kernel-cachyos-devel
+
+# Bootloader and UKI subsystem
+systemd-boot
+systemd-ukify
+dracut
+
+# CLI & Interactive Modern Environment
+brush-shell
+zoxide
+uutils-coreutils
+starship
+ripgrep
+fd-find
+bat
+eza
+btop
+
+# Repositories & Drivers
+rpmfusion-free-release
+rpmfusion-nonfree-release
+
+# GOFR custom packages
+gofr-release
+gofr-defaults
+gofr-boot
+gofr-rustyuki-integration
