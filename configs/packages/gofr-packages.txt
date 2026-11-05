@@ -1,16 +1,18 @@
 # Core Fedora Workstation Base
 @core
 @workstation-product-environment
+
+# CachyOS Performance Kernel
 kernel-cachyos
 kernel-cachyos-devel
 
-# Bootloader and UKI subsystem
+# Bootloader & UKI Subsystem
 systemd-boot
 systemd-ukify
 dracut
+rustyuki
 
-# CLI & Interactive Modern Environment
-brush-shell
+# Modern CLI Stack
 zoxide
 uutils-coreutils
 starship
@@ -20,11 +22,11 @@ bat
 eza
 btop
 
-# Repositories & Drivers
+# Repositories & Upstream Integrations
 rpmfusion-free-release
 rpmfusion-nonfree-release
 
-# GOFR custom packages
+# GOFR Custom RPM Suite
 gofr-release
 gofr-defaults
 gofr-boot

@@ -5,30 +5,25 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  lint-and-validate:
+  tier1-lint-and-rpms:
+    name: Tier 1 - Lint & RPM Package Build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: ShellCheck validation
+      - name: Shell syntax check
         run: |
-          find scripts/ -type f -name "*.sh" -exec bash -n {} +
+          find scripts/ tests/ -type f -name "*.sh" -exec bash -n {} +
 
-      - name: Spec file syntax verification
+      - name: Spec file validation
         run: |
           find packaging/ -type f -name "*.spec" -exec echo "Validating {}" \;
 
-  build-rpms:
-    runs-on: ubuntu-latest
-    needs: lint-and-validate
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Set up Podman
+      - name: Install Podman
         run: |
           sudo apt-get update && sudo apt-get install -y podman
 
@@ -41,3 +36,59 @@ jobs:
         with:
           name: gofr-rpms
           path: out/rpms/*.rpm
+
+  tier2-boot-validation:
+    name: Tier 2 - Image Build & QEMU UEFI Boot Testing
+    needs: tier1-lint-and-rpms
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install QEMU, OVMF, mtools, and disk utilities
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qemu-system-x86 \
+            ovmf \
+            mtools \
+            dosfstools \
+            btrfs-progs \
+            genisoimage \
+            fdisk
+
+      - name: Download built RPMs
+        uses: actions/download-artifact@v4
+        with:
+          name: gofr-rpms
+          path: out/rpms
+
+      - name: Verify dependencies
+        run: |
+          make deps
+
+      - name: Build bootable disk image
+        run: |
+          make disk-image
+
+      - name: Validate disk image boot in QEMU/OVMF
+        run: |
+          make test-vm
+
+      - name: Build installable UEFI ISO
+        run: |
+          make iso
+
+      - name: Validate ISO boot in QEMU/OVMF
+        run: |
+          make test-iso
+
+      - name: Validate kernel update lifecycle and fallback retention
+        run: |
+          make test-lifecycle
+
+      - name: Archive checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: gofr-checksums
+          path: out/SHA256SUMS

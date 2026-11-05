@@ -34,5 +34,13 @@ podman run --rm \
         echo "RPM build completed successfully."
     '
 
-echo "Built RPM artifacts:"
+# Also include pre-built sibling packages (rustyuki and brush-shell) if present
+if [ -f "/tmp/rustyuki-0.2.0-1.fc45.x86_64.rpm" ]; then
+    cp -v "/tmp/rustyuki-0.2.0-1.fc45.x86_64.rpm" "${OUT_DIR}/"
+fi
+if [ -f "/tmp/brush-shell-0.4.0-1.fc45.x86_64.rpm" ]; then
+    cp -v "/tmp/brush-shell-0.4.0-1.fc45.x86_64.rpm" "${OUT_DIR}/"
+fi
+
+echo "All package artifacts in ${OUT_DIR}:"
 ls -lh "${OUT_DIR}"/*.rpm

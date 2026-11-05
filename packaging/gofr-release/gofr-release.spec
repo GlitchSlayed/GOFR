@@ -1,5 +1,5 @@
 Name:           gofr-release
-Version:        0.1.0
+Version:        45.0.0
 Release:        1%{?dist}
 Summary:        GOFR (Glitchy's Opinionated Fedora Remix) Release Files and Repositories
 License:        MIT
@@ -11,7 +11,7 @@ Requires:       fedora-release
 
 %description
 GOFR release metadata, distribution identification, and default repository
-configurations for CachyOS COPR, RPM Fusion Free & Nonfree, and Terra.
+configurations for CachyOS COPR and official RPM Fusion Free & Nonfree.
 
 %prep
 # No prep required
@@ -22,16 +22,16 @@ configurations for CachyOS COPR, RPM Fusion Free & Nonfree, and Terra.
 %install
 mkdir -p %{buildroot}%{_prefix}/lib
 mkdir -p %{buildroot}%{_sysconfdir}/yum.repos.d
-mkdir -p %{buildroot}%{_sysconfdir}
+mkdir -p %{buildroot}%{_sysconfdir}/pki/rpm-gpg
 
 # Install os-release supplement / identity
 cat << 'EOF' > %{buildroot}%{_prefix}/lib/gofr-release
 NAME="GOFR"
-VERSION="0.1 (Fedora 45 Remix)"
+VERSION="45 (Workstation Remix)"
 ID=gofr
 ID_LIKE="fedora"
-VERSION_ID=0.1
-PRETTY_NAME="GOFR 0.1 (Fedora 45 Remix)"
+VERSION_ID=45
+PRETTY_NAME="GOFR 45 (Fedora Workstation Remix)"
 ANSI_COLOR="0;38;2;45;156;219"
 HOME_URL="https://github.com/GlitchSlayed/GOFR"
 DOCUMENTATION_URL="https://github.com/GlitchSlayed/GOFR/tree/main/docs"
@@ -41,8 +41,8 @@ REDHAT_BUGZILLA_PRODUCT="Fedora"
 REDHAT_BUGZILLA_PRODUCT_VERSION=45
 REDHAT_SUPPORT_PRODUCT="Fedora"
 REDHAT_SUPPORT_PRODUCT_VERSION=45
-VARIANT="Opinionated Remix"
-VARIANT_ID=gofr
+VARIANT="Workstation Remix"
+VARIANT_ID=gofr-workstation
 EOF
 
 # Install CachyOS Copr repository
@@ -60,22 +60,65 @@ enabled_metadata=1
 priority=90
 EOF
 
-# Install Terra repository for Brush shell
-cat << 'EOF' > %{buildroot}%{_sysconfdir}/yum.repos.d/terra.repo
-[terra]
-name=Terra $releasever
-baseurl=https://repos.fyralabs.com/terra$releasever/
+# Install RPM Fusion Free repository
+cat << 'EOF' > %{buildroot}%{_sysconfdir}/yum.repos.d/rpmfusion-free.repo
+[rpmfusion-free]
+name=RPM Fusion for Fedora $releasever - Free
+metalink=https://mirrors.rpmfusion.org/metalink?repo=free-fedora-$releasever&arch=$basearch
 enabled=1
+type=rpm-md
 gpgcheck=1
-gpgkey=https://repos.fyralabs.com/terra$releasever/key.asc
-priority=95
+repo_gpgcheck=0
+gpgkey=https://rpmfusion.org/keys?action=AttachFile&do=get&target=RPM-GPG-KEY-rpmfusion-free-fedora-$releasever
+EOF
+
+# Install RPM Fusion Free Updates repository
+cat << 'EOF' > %{buildroot}%{_sysconfdir}/yum.repos.d/rpmfusion-free-updates.repo
+[rpmfusion-free-updates]
+name=RPM Fusion for Fedora $releasever - Free - Updates
+metalink=https://mirrors.rpmfusion.org/metalink?repo=free-fedora-updates-released-$releasever&arch=$basearch
+enabled=1
+type=rpm-md
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=https://rpmfusion.org/keys?action=AttachFile&do=get&target=RPM-GPG-KEY-rpmfusion-free-fedora-$releasever
+EOF
+
+# Install RPM Fusion Nonfree repository
+cat << 'EOF' > %{buildroot}%{_sysconfdir}/yum.repos.d/rpmfusion-nonfree.repo
+[rpmfusion-nonfree]
+name=RPM Fusion for Fedora $releasever - Nonfree
+metalink=https://mirrors.rpmfusion.org/metalink?repo=nonfree-fedora-$releasever&arch=$basearch
+enabled=1
+type=rpm-md
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=https://rpmfusion.org/keys?action=AttachFile&do=get&target=RPM-GPG-KEY-rpmfusion-nonfree-fedora-$releasever
+EOF
+
+# Install RPM Fusion Nonfree Updates repository
+cat << 'EOF' > %{buildroot}%{_sysconfdir}/yum.repos.d/rpmfusion-nonfree-updates.repo
+[rpmfusion-nonfree-updates]
+name=RPM Fusion for Fedora $releasever - Nonfree - Updates
+metalink=https://mirrors.rpmfusion.org/metalink?repo=nonfree-fedora-updates-released-$releasever&arch=$basearch
+enabled=1
+type=rpm-md
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=https://rpmfusion.org/keys?action=AttachFile&do=get&target=RPM-GPG-KEY-rpmfusion-nonfree-fedora-$releasever
 EOF
 
 %files
 %{_prefix}/lib/gofr-release
 %config(noreplace) %{_sysconfdir}/yum.repos.d/bieszczaders-kernel-cachyos.repo
-%config(noreplace) %{_sysconfdir}/yum.repos.d/terra.repo
+%config(noreplace) %{_sysconfdir}/yum.repos.d/rpmfusion-free.repo
+%config(noreplace) %{_sysconfdir}/yum.repos.d/rpmfusion-free-updates.repo
+%config(noreplace) %{_sysconfdir}/yum.repos.d/rpmfusion-nonfree.repo
+%config(noreplace) %{_sysconfdir}/yum.repos.d/rpmfusion-nonfree-updates.repo
 
 %changelog
-* Wed Nov 05 2026 GlitchSlayed <glitchy@example.com> - 0.1.0-1
-- Initial GOFR release package definition
+* Thu Nov 05 2026 GlitchSlayed <60859364+GlitchSlayed@users.noreply.github.com> - 45.0.0-1
+- Align with Fedora 45 release versioning
+- Add official RPM Fusion Free and Nonfree repositories
+- Remove Terra repository dependency
+- Include CachyOS Copr repository
