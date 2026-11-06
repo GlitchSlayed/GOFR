@@ -104,20 +104,37 @@ fi
 
 # 3. Setup build workspace
 WORK_DIR="$(mktemp -d /tmp/gofr-release-build.XXXXXX)"
+STAGING_DIR="${WORK_DIR}/staging"
+ROOT_SUBVOL="${STAGING_DIR}/@"
+HOME_SUBVOL="${STAGING_DIR}/@home"
+
 cleanup() {
     echo "Cleaning build workspace: ${WORK_DIR}..."
+    umount -l "${ROOT_SUBVOL}/dev" 2>/dev/null || true
+    umount -l "${ROOT_SUBVOL}/sys" 2>/dev/null || true
+    umount -l "${ROOT_SUBVOL}/proc" 2>/dev/null || true
     rm -rf "${WORK_DIR}"
 }
 trap cleanup EXIT
 
-STAGING_DIR="${WORK_DIR}/staging"
-ROOT_SUBVOL="${STAGING_DIR}/@"
-HOME_SUBVOL="${STAGING_DIR}/@home"
-mkdir -p "${ROOT_SUBVOL}" "${HOME_SUBVOL}"
+mkdir -p "${ROOT_SUBVOL}"/{proc,sys,dev,run,etc/kernel} "${HOME_SUBVOL}"
 
 ROOT_UUID="b7e2894a-89a1-4389-9a74-d4b998cf1122"
 ESP_UUID="45A1-90F3"
 ESP_UUID_HEX="45A190F3"
+
+# Mount virtual filesystems for chroot and systemd RPM scriptlets
+mount -t proc /proc "${ROOT_SUBVOL}/proc"
+mount -t sysfs /sys "${ROOT_SUBVOL}/sys"
+mount --bind /dev "${ROOT_SUBVOL}/dev"
+
+# Configure layout=none for offline image composition
+cat << 'EOF' > "${ROOT_SUBVOL}/etc/kernel/install.conf"
+layout=none
+EOF
+
+# Signal kernel posttrans that we are running in an offline image builder
+touch "${ROOT_SUBVOL}/run/ostree-booted"
 
 # 4. Configure upstream repositories on host
 echo "Enabling CachyOS Copr and RPM Fusion repositories..."
@@ -158,8 +175,14 @@ dnf5 --installroot="${ROOT_SUBVOL}" \
     "${RPMS_DIR}"/*.noarch.rpm \
     "${RPMS_DIR}"/*.x86_64.rpm
 
-echo "Cleaning installroot package cache..."
+echo "Cleaning installroot package cache and temporary builder mounts..."
 dnf5 --installroot="${ROOT_SUBVOL}" clean all
+
+rm -f "${ROOT_SUBVOL}/run/ostree-booted"
+rm -f "${ROOT_SUBVOL}/etc/kernel/install.conf"
+umount -l "${ROOT_SUBVOL}/dev" 2>/dev/null || true
+umount -l "${ROOT_SUBVOL}/sys" 2>/dev/null || true
+umount -l "${ROOT_SUBVOL}/proc" 2>/dev/null || true
 
 # 6. Configure target system defaults
 echo "Applying GOFR system configuration defaults..."

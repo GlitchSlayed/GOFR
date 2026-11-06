@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: registry.fedoraproject.org/fedora:45
-      options: --privileged
+      options: --privileged --security-opt seccomp=unconfined --security-opt apparmor=unconfined
     steps:
       - name: Install Fedora build and virtualization tools
         run: |
