@@ -9,11 +9,24 @@ on:
 
 jobs:
   tier1-lint-and-rpms:
-    name: Tier 1 - Lint & RPM Package Build
+    name: Tier 1 - Lint & RPM Package Build (Fedora 45)
     runs-on: ubuntu-latest
+    container:
+      image: registry.fedoraproject.org/fedora:45
+      options: --privileged
     steps:
+      - name: Install Fedora base build dependencies
+        run: |
+          dnf install -y git make rpm-build rpmlint
+          git config --global --add safe.directory "*"
+
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Verify Fedora environment
+        run: |
+          cat /etc/fedora-release
+          rpmbuild --version
 
       - name: Shell syntax check
         run: |
@@ -21,11 +34,7 @@ jobs:
 
       - name: Spec file validation
         run: |
-          find packaging/ -type f -name "*.spec" -exec echo "Validating {}" \;
-
-      - name: Install Podman
-        run: |
-          sudo apt-get update && sudo apt-get install -y podman
+          find packaging/ -type f -name "*.spec" -exec rpmlint {} +
 
       - name: Build GOFR RPMs
         run: |
@@ -38,29 +47,42 @@ jobs:
           path: out/rpms/*.rpm
 
   tier2-boot-validation:
-    name: Tier 2 - Image Build & QEMU UEFI Boot Testing
+    name: Tier 2 - Image Build & QEMU UEFI Boot Testing (Fedora 45)
     needs: tier1-lint-and-rpms
     runs-on: ubuntu-latest
+    container:
+      image: registry.fedoraproject.org/fedora:45
+      options: --privileged
     steps:
+      - name: Install Fedora build and virtualization tools
+        run: |
+          dnf install -y \
+            git \
+            make \
+            gcc \
+            cpio \
+            gzip \
+            qemu-system-x86-core \
+            qemu-img \
+            edk2-ovmf \
+            systemd-ukify \
+            kernel-core \
+            btrfs-progs \
+            dosfstools \
+            mtools \
+            genisoimage \
+            fdisk
+          git config --global --add safe.directory "*"
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install QEMU, OVMF, mtools, and disk utilities
+      - name: Verify Fedora environment
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            qemu-system-x86 \
-            qemu-utils \
-            ovmf \
-            mtools \
-            dosfstools \
-            btrfs-progs \
-            genisoimage \
-            fdisk \
-            systemd-ukify \
-            linux-image-generic \
-            build-essential
-          sudo chmod +r /boot/vmlinuz* /boot/* 2>/dev/null || true
+          cat /etc/fedora-release
+          ukify --version
+          ls -la /lib/modules/*/vmlinuz
+          ls -la /usr/share/edk2/ovmf/OVMF_CODE.fd
 
       - name: Download built RPMs
         uses: actions/download-artifact@v4

@@ -24,7 +24,7 @@ MISSING=0
 echo "Checking host build utilities..."
 check_cmd make true || MISSING=$((MISSING + 1))
 check_cmd git true || MISSING=$((MISSING + 1))
-check_cmd podman true || MISSING=$((MISSING + 1))
+check_cmd podman false || true
 
 echo "Checking virtualization tools..."
 check_cmd qemu-system-x86_64 false || true
