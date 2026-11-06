@@ -18,9 +18,12 @@ OUT_DIR="${ROOT_DIR}/out"
 
 mkdir -p "${OUT_DIR}"
 
-ISO_IMAGE="${OUT_DIR}/gofr-45.0.0-x86_64.iso"
+FEDORA_RELEASE="${FEDORA_RELEASE:-45}"
+VERSION_TAG="${VERSION_TAG:-${FEDORA_RELEASE}.1}"
+ISO_NAME="gofr-netinstall-${VERSION_TAG}-x86_64.iso"
+ISO_IMAGE="${OUT_DIR}/${ISO_NAME}"
 
-echo "=== Building GOFR Installable UEFI ISO ==="
+echo "=== Building GOFR Netinstall UEFI ISO (${ISO_NAME}) ==="
 
 WORK_DIR="$(mktemp -d /tmp/gofr-iso-build.XXXXXX)"
 trap 'rm -rf "${WORK_DIR}"' EXIT
@@ -168,15 +171,18 @@ mcopy -i "${EFIBOOT_IMG}" "${ISO_ROOT}/loader/loader.conf" ::loader/loader.conf
 mcopy -i "${EFIBOOT_IMG}" "${ISO_UKI}" ::EFI/Linux/gofr-installer.efi
 
 # 7. Generate Bootable Hybrid ISO
-echo "Mastering ISO filesystem via mkisofs..."
-mkisofs -V "GOFR_45_X86_64" \
+echo "Mastering Netinstall ISO filesystem via mkisofs..."
+mkisofs -V "GOFR_NETINST_${FEDORA_RELEASE}" \
     -J -R \
     -eltorito-alt-boot -e images/efiboot.img -no-emul-boot \
     -o "${ISO_IMAGE}" "${ISO_ROOT}" >/dev/null 2>&1
 
-echo "Generating SHA-256 checksums..."
-(cd "${OUT_DIR}" && sha256sum "$(basename "${ISO_IMAGE}")" > "${OUT_DIR}/SHA256SUMS")
+# Provide compatibility link for tests and tooling
+ln -sf "${ISO_NAME}" "${OUT_DIR}/gofr-45.0.0-x86_64.iso"
 
-echo "=== GOFR ISO Build Complete ==="
+echo "Generating SHA-256 checksums..."
+(cd "${OUT_DIR}" && sha256sum "${ISO_NAME}" > "${OUT_DIR}/SHA256SUMS")
+
+echo "=== GOFR Netinstall ISO Build Complete ==="
 echo "ISO artifact: ${ISO_IMAGE} ($(ls -lh "${ISO_IMAGE}" | awk '{print $5}'))"
 cat "${OUT_DIR}/SHA256SUMS"

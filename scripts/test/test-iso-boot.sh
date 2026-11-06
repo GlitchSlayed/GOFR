@@ -9,10 +9,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 OUT_DIR="${ROOT_DIR}/out"
 
-ISO_IMAGE="${OUT_DIR}/gofr-45.0.0-x86_64.iso"
+ISO_IMAGE="${1:-}"
+if [ -z "${ISO_IMAGE}" ]; then
+    for candidate in "${OUT_DIR}"/gofr-netinstall-*.iso "${OUT_DIR}"/gofr-*.iso; do
+        if [ -f "${candidate}" ]; then
+            ISO_IMAGE="${candidate}"
+            break
+        fi
+    done
+fi
 
-if [ ! -f "${ISO_IMAGE}" ]; then
-    echo "ERROR: ISO image ${ISO_IMAGE} not found. Run 'make iso' first." >&2
+if [ -z "${ISO_IMAGE}" ] || [ ! -f "${ISO_IMAGE}" ]; then
+    echo "ERROR: ISO image not found in ${OUT_DIR}. Run 'make iso' first." >&2
     exit 1
 fi
 

@@ -368,7 +368,7 @@ echo "Computing SHA256 checksums..."
 (
     cd "${OUT_DIR}"
     rm -f "${SHA256_FILE}"
-    sha256sum "${IMAGE_NAME}.raw" "${IMAGE_NAME}.qcow2"* > "${SHA256_FILE}"
+    sha256sum ${IMAGE_NAME}* > "${SHA256_FILE}"
 )
 
 cat << EOF > "${MANIFEST_FILE}"

@@ -7,7 +7,7 @@ This document details the release process, artifacts, checksums, and verificatio
 ## 1. Release Deliverables
 
 Every official GOFR release includes:
-1. **Installable UEFI ISO Image:** `gofr-<version>-<arch>.iso`
+1. **Installable Hybrid UEFI Netinstall ISO Image:** `gofr-netinstall-<version>-<arch>.iso` (< 1 GiB)
 2. **QEMU / Cloud Raw/QCOW2 Image:** `gofr-<version>-<arch>.qcow2`
 3. **Sha256 Checksums:** `SHA256SUMS`
 4. **GPG Signatures:** `SHA256SUMS.gpg`

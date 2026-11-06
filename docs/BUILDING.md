@@ -30,8 +30,9 @@ make rpms
 # Build bootable raw / qcow2 disk image
 make disk-image
 
-# Build installable Live / UEFI ISO
+# Build installable hybrid UEFI Netinstall ISO (< 1 GiB)
 make iso
+# or: make netinstall
 
 # Run VM smoke tests under QEMU with UEFI (OVMF)
 make test-vm

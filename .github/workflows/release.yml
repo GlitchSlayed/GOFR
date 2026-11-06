@@ -97,6 +97,14 @@ jobs:
         run: |
           make rpms
 
+      - name: Build Netinstall UEFI ISO (< 1 GiB)
+        run: |
+          export FEDORA_RELEASE="${{ github.event.inputs.fedora_release || '45' }}"
+          export VERSION_TAG="${{ steps.versioning.outputs.tag }}"
+          make iso
+          mkdir -p out/release
+          cp -v out/gofr-netinstall-*.iso out/release/
+
       - name: Build full Fedora Workstation release image
         run: |
           export FEDORA_RELEASE="${{ github.event.inputs.fedora_release || '45' }}"
@@ -110,6 +118,7 @@ jobs:
         with:
           name: gofr-workstation-release-${{ steps.versioning.outputs.tag }}
           path: |
+            out/release/*.iso
             out/release/*.qcow2*
             out/release/SHA256SUMS
             out/release/manifest.json
@@ -127,34 +136,35 @@ jobs:
 
           Official automated release build based on **Fedora Workstation FEDORA_MAJOR_PLACEHOLDER**.
 
-          ## Highlights & System Architecture
-          - **Base Environment:** Fedora Workstation FEDORA_MAJOR_PLACEHOLDER (\`@workstation-product-environment\`, GNOME Desktop, Wayland, GDM, PipeWire)
-          - **Performance Kernel:** CachyOS performance kernel (\`kernel-cachyos\`) from maintained Fedora COPR
-          - **Unified Kernel Image:** Type #2 Unified Kernel Image (BLS Type #2) assembled with RustyUKI and \`ukify\`
-          - **Boot Manager:** Native \`systemd-boot\` configured on a dedicated 4 GiB FAT32 EFI System Partition (\`/efi\`)
-          - **Filesystem Architecture:** Btrfs root filesystem with subvolumes \`@\` (root) and \`@home\`, transparent zstd:1 compression
-          - **Modern CLI Stack:** \`zoxide\`, \`uutils-coreutils\`, \`ripgrep\`, \`fd-find\`, \`bat\`, \`eza\`, \`btop\`
-          - **Default Login Shell:** Brush shell (\`brush\`) registered in \`/etc/shells\` with safe bash compatibility
-          - **Security Posture:** SELinux in Enforcing mode, uninitialized machine-id for fresh first-boot initialization
+          ## Netinstall Architecture (Recommended Delivery)
+          - **Compact & Fast Download:** Download `gofr-netinstall-RELEASE_TAG_PLACEHOLDER-x86_64.iso` (< 1 GiB) in seconds.
+          - **Always Up-to-Date:** Packages are streamed live from upstream mirrors during installation.
+          - **Customizable Profiles:** Choose full Fedora Workstation GNOME, minimal desktop, or server/developer installations.
+          - **Modern UKI + systemd-boot:** Automatically partitions a 4 GiB ESP at `/efi` and Btrfs root with subvolumes (`@` and `@home`).
 
-          ## Quick Start (QEMU / KVM / Proxmox)
-          If downloaded as multi-part assets, reassemble the disk image:
-          \`\`\`bash
+          ### Quick Start: Write Netinstall ISO to USB
+          ```bash
+          sudo dd if=gofr-netinstall-RELEASE_TAG_PLACEHOLDER-x86_64.iso of=/dev/sdX bs=4M status=progress conv=fsync
+          ```
+
+          ## Pre-Installed Virtual Machine Disk Image (QCOW2)
+          If downloading the pre-installed QCOW2 image, reassemble multipart chunks if applicable:
+          ```bash
           cat gofr-workstation-RELEASE_TAG_PLACEHOLDER-x86_64.qcow2.part* > gofr-workstation-RELEASE_TAG_PLACEHOLDER-x86_64.qcow2
           sha256sum -c SHA256SUMS --ignore-missing
-          \`\`\`
+          ```
 
           Boot directly with UEFI:
-          \`\`\`bash
-          qemu-system-x86_64 -enable-kvm -m 4G -smp 4 \\
-            -bios /usr/share/edk2/ovmf/OVMF_CODE.fd \\
+          ```bash
+          qemu-system-x86_64 -enable-kvm -m 4G -smp 4 \
+            -bios /usr/share/edk2/ovmf/OVMF_CODE.fd \
             -drive file=gofr-workstation-RELEASE_TAG_PLACEHOLDER-x86_64.qcow2,format=qcow2
-          \`\`\`
+          ```
 
           ## Verification Checksums
-          \`\`\`
+          ```
           CHECKSUMS_PLACEHOLDER
-          \`\`\`
+          ```
           NOTES_EOF
 
           sed -i "s/RELEASE_TAG_PLACEHOLDER/${RELEASE_TAG}/g" /tmp/release-notes.md
@@ -162,11 +172,12 @@ jobs:
           sed -i "/CHECKSUMS_PLACEHOLDER/r out/release/SHA256SUMS" /tmp/release-notes.md
           sed -i "s/CHECKSUMS_PLACEHOLDER//g" /tmp/release-notes.md
 
-          # Select assets to upload (chunks if split, otherwise single image)
+          # Select assets to upload (Netinstall ISO + QCOW2 chunks + checksums + manifest)
+          UPLOAD_ASSETS=(out/release/*.iso out/release/SHA256SUMS out/release/manifest.json)
           if ls out/release/*.qcow2.part* 1> /dev/null 2>&1; then
-              UPLOAD_ASSETS=(out/release/*.qcow2.part* out/release/SHA256SUMS out/release/manifest.json)
-          else
-              UPLOAD_ASSETS=(out/release/*.qcow2 out/release/SHA256SUMS out/release/manifest.json)
+              UPLOAD_ASSETS+=(out/release/*.qcow2.part*)
+          elif ls out/release/*.qcow2 1> /dev/null 2>&1; then
+              UPLOAD_ASSETS+=(out/release/*.qcow2)
           fi
 
           gh release create "${RELEASE_TAG}" \
