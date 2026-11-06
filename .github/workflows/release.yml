@@ -7,6 +7,10 @@ on:
         description: 'Target Fedora Release Version'
         required: true
         default: '45'
+      release_version:
+        description: 'Specific release version/tag (leave empty for auto-incremental, e.g. 45.1, 45.2)'
+        required: false
+        default: ''
       esp_size_mib:
         description: 'EFI System Partition Size (MiB)'
         required: true
@@ -15,6 +19,9 @@ on:
         description: 'Root Partition Size (MiB)'
         required: true
         default: '16384'
+
+permissions:
+  contents: write
 
 jobs:
   build-workstation-release:
@@ -42,11 +49,39 @@ jobs:
             gcc \
             cpio \
             gzip \
+            curl \
+            gh \
             file
           git config --global --add safe.directory "*"
 
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Determine incremental release version
+        id: versioning
+        run: |
+          FEDORA_MAJOR="${{ github.event.inputs.fedora_release || '45' }}"
+          USER_TAG="${{ github.event.inputs.release_version }}"
+
+          if [ -n "${USER_TAG}" ]; then
+            RELEASE_TAG="${USER_TAG}"
+          else
+            git fetch --tags --force 2>/dev/null || true
+            LATEST_INC=$(git tag -l "${FEDORA_MAJOR}.*" "v${FEDORA_MAJOR}.*" | sed -E "s/^v?${FEDORA_MAJOR}\.([0-9]+).*/\1/" | sort -n | tail -n 1 || true)
+            if [ -z "${LATEST_INC}" ]; then
+              NEXT_INC=1
+            else
+              NEXT_INC=$((LATEST_INC + 1))
+            fi
+            RELEASE_TAG="${FEDORA_MAJOR}.${NEXT_INC}"
+          fi
+
+          echo "tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "======================================================"
+          echo " Target Release Version: ${RELEASE_TAG}"
+          echo "======================================================"
 
       - name: Verify build environment
         run: |
@@ -55,6 +90,7 @@ jobs:
           rpmbuild --version
           ukify --version
           qemu-img --version
+          gh --version
 
       - name: Build GOFR RPMs
         run: |
@@ -63,6 +99,7 @@ jobs:
       - name: Build full Fedora Workstation release image
         run: |
           export FEDORA_RELEASE="${{ github.event.inputs.fedora_release || '45' }}"
+          export VERSION_TAG="${{ steps.versioning.outputs.tag }}"
           export ESP_SIZE_MIB="${{ github.event.inputs.esp_size_mib || '4096' }}"
           export ROOT_SIZE_MIB="${{ github.event.inputs.root_size_mib || '16384' }}"
           ./scripts/release/build-workstation-image.sh
@@ -70,8 +107,49 @@ jobs:
       - name: Archive release artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: gofr-workstation-release-fc${{ github.event.inputs.fedora_release || '45' }}
+          name: gofr-workstation-release-${{ steps.versioning.outputs.tag }}
           path: |
             out/release/*.qcow2
             out/release/SHA256SUMS
+            out/release/manifest.json
+
+      - name: Publish to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.versioning.outputs.tag }}
+          FEDORA_MAJOR: ${{ github.event.inputs.fedora_release || '45' }}
+        run: |
+          echo "Publishing GitHub Release for GOFR ${RELEASE_TAG}..."
+
+          cat << 'NOTES_EOF' > /tmp/release-notes.md
+# GOFR RELEASE_TAG_PLACEHOLDER — Glitchy's Opinionated Fedora Remix
+
+Official automated release build based on **Fedora Workstation FEDORA_MAJOR_PLACEHOLDER**.
+
+## Highlights & System Architecture
+- **Base Environment:** Fedora Workstation FEDORA_MAJOR_PLACEHOLDER (`@workstation-product-environment`, GNOME Desktop, Wayland, GDM, PipeWire)
+- **Performance Kernel:** CachyOS performance kernel (`kernel-cachyos`) from maintained Fedora COPR
+- **Unified Kernel Image:** Type #2 Unified Kernel Image (BLS Type #2) assembled with RustyUKI and `ukify`
+- **Boot Manager:** Native `systemd-boot` configured on a dedicated 4 GiB FAT32 EFI System Partition (`/efi`)
+- **Filesystem Architecture:** Btrfs root filesystem with subvolumes `@` (root) and `@home`, transparent zstd:1 compression
+- **Modern CLI Stack:** `zoxide`, `uutils-coreutils`, `ripgrep`, `fd-find`, `bat`, `eza`, `btop`
+- **Default Login Shell:** Brush shell (`brush`) registered in `/etc/shells` with safe bash compatibility
+- **Security Posture:** SELinux in Enforcing mode, uninitialized machine-id for fresh first-boot initialization
+
+## Verification Checksums
+```
+CHECKSUMS_PLACEHOLDER
+```
+NOTES_EOF
+
+          sed -i "s/RELEASE_TAG_PLACEHOLDER/${RELEASE_TAG}/g" /tmp/release-notes.md
+          sed -i "s/FEDORA_MAJOR_PLACEHOLDER/${FEDORA_MAJOR}/g" /tmp/release-notes.md
+          sed -i "/CHECKSUMS_PLACEHOLDER/r out/release/SHA256SUMS" /tmp/release-notes.md
+          sed -i "s/CHECKSUMS_PLACEHOLDER//g" /tmp/release-notes.md
+
+          gh release create "${RELEASE_TAG}" \
+            --title "GOFR ${RELEASE_TAG} (Fedora Workstation ${FEDORA_MAJOR})" \
+            --notes-file /tmp/release-notes.md \
+            out/release/*.qcow2 \
+            out/release/SHA256SUMS \
             out/release/manifest.json

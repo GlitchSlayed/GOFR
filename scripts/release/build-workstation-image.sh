@@ -19,13 +19,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 FEDORA_RELEASE="${FEDORA_RELEASE:-45}"
+VERSION_TAG="${VERSION_TAG:-${FEDORA_RELEASE}.1}"
 ESP_SIZE_MIB="${ESP_SIZE_MIB:-4096}"
 ROOT_SIZE_MIB="${ROOT_SIZE_MIB:-16384}"
 TOTAL_SIZE_MIB=$((1 + ESP_SIZE_MIB + ROOT_SIZE_MIB + 4))
 
 OUT_DIR="${OUT_DIR:-${ROOT_DIR}/out/release}"
 RPMS_DIR="${ROOT_DIR}/out/rpms"
-IMAGE_NAME="gofr-workstation-${FEDORA_RELEASE}.0.0-x86_64"
+IMAGE_NAME="gofr-workstation-${VERSION_TAG}-x86_64"
 RAW_IMAGE="${OUT_DIR}/${IMAGE_NAME}.raw"
 QCOW_IMAGE="${OUT_DIR}/${IMAGE_NAME}.qcow2"
 SHA256_FILE="${OUT_DIR}/SHA256SUMS"
@@ -45,6 +46,7 @@ if [ "${IS_FEDORA_BUILDER}" = false ]; then
             -v "${ROOT_DIR}:${ROOT_DIR}:z" \
             -w "${ROOT_DIR}" \
             -e FEDORA_RELEASE="${FEDORA_RELEASE}" \
+            -e VERSION_TAG="${VERSION_TAG}" \
             -e ESP_SIZE_MIB="${ESP_SIZE_MIB}" \
             -e ROOT_SIZE_MIB="${ROOT_SIZE_MIB}" \
             -e OUT_DIR="${OUT_DIR}" \
@@ -360,7 +362,7 @@ cat << EOF > "${MANIFEST_FILE}"
 {
   "distribution": "GOFR",
   "fedora_release": "${FEDORA_RELEASE}",
-  "version": "${FEDORA_RELEASE}.0.0",
+  "version": "${VERSION_TAG}",
   "architecture": "x86_64",
   "desktop": "GNOME",
   "kernel": "${KVER}",
