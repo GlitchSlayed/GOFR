@@ -15,7 +15,6 @@ rustyuki
 # Modern CLI Stack
 zoxide
 uutils-coreutils
-starship
 ripgrep
 fd-find
 bat

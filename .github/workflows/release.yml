@@ -1,0 +1,77 @@
+name: GOFR Workstation Release Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      fedora_release:
+        description: 'Target Fedora Release Version'
+        required: true
+        default: '45'
+      esp_size_mib:
+        description: 'EFI System Partition Size (MiB)'
+        required: true
+        default: '4096'
+      root_size_mib:
+        description: 'Root Partition Size (MiB)'
+        required: true
+        default: '16384'
+
+jobs:
+  build-workstation-release:
+    name: Build Full Fedora Workstation Image (Fedora ${{ github.event.inputs.fedora_release || '45' }} + GNOME)
+    runs-on: ubuntu-latest
+    container:
+      image: registry.fedoraproject.org/fedora:45
+      options: --privileged
+    steps:
+      - name: Install Fedora build and virtualization tools
+        run: |
+          dnf install -y \
+            git \
+            make \
+            rpm-build \
+            rpmlint \
+            qemu-img \
+            edk2-ovmf \
+            systemd-ukify \
+            btrfs-progs \
+            dosfstools \
+            mtools \
+            fdisk \
+            dracut \
+            gcc \
+            cpio \
+            gzip \
+            file
+          git config --global --add safe.directory "*"
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Verify build environment
+        run: |
+          cat /etc/fedora-release
+          dnf5 --version
+          rpmbuild --version
+          ukify --version
+          qemu-img --version
+
+      - name: Build GOFR RPMs
+        run: |
+          make rpms
+
+      - name: Build full Fedora Workstation release image
+        run: |
+          export FEDORA_RELEASE="${{ github.event.inputs.fedora_release || '45' }}"
+          export ESP_SIZE_MIB="${{ github.event.inputs.esp_size_mib || '4096' }}"
+          export ROOT_SIZE_MIB="${{ github.event.inputs.root_size_mib || '16384' }}"
+          ./scripts/release/build-workstation-image.sh
+
+      - name: Archive release artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: gofr-workstation-release-fc${{ github.event.inputs.fedora_release || '45' }}
+          path: |
+            out/release/*.qcow2
+            out/release/SHA256SUMS
+            out/release/manifest.json

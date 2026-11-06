@@ -1,4 +1,4 @@
-.PHONY: all deps rpms disk-image iso test-vm test-iso test-lifecycle test clean help
+.PHONY: all deps rpms disk-image iso workstation-image release test-vm test-iso test-lifecycle test clean help
 
 SHELL := /usr/bin/env bash
 
@@ -8,10 +8,12 @@ help:
 	@echo "GOFR (Glitchy's Opinionated Fedora Remix) Build System"
 	@echo ""
 	@echo "Build Targets:"
-	@echo "  deps            - Verify host tools and build dependencies"
-	@echo "  rpms            - Build GOFR RPM packages in clean container"
-	@echo "  disk-image      - Build bootable QEMU/OVMF GPT disk image (raw and qcow2)"
-	@echo "  iso             - Build installable hybrid UEFI ISO"
+	@echo "  deps              - Verify host tools and build dependencies"
+	@echo "  rpms              - Build GOFR RPM packages in clean container"
+	@echo "  disk-image        - Build bootable QEMU/OVMF GPT disk image (raw and qcow2)"
+	@echo "  iso               - Build installable hybrid UEFI ISO"
+	@echo "  workstation-image - Build full Fedora Workstation (GNOME) + CachyOS disk image"
+	@echo "  release           - Alias for workstation-image"
 	@echo ""
 	@echo "Testing Targets:"
 	@echo "  test            - Run all automated validation suites"
@@ -34,6 +36,11 @@ disk-image:
 
 iso:
 	@./scripts/build/build-iso.sh
+
+workstation-image:
+	@./scripts/release/build-workstation-image.sh
+
+release: workstation-image
 
 test-vm:
 	@./scripts/test/test-vm-boot.sh
