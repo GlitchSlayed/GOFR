@@ -287,9 +287,11 @@ else
 fi
 
 echo "Assembled UKI: $(ls -lh "${UKI_EFI}" | awk '{print $5}')"
-if ! file "${UKI_EFI}" | grep -q "PE32+"; then
-    echo "ERROR: UKI is not a valid PE32+ executable!" >&2
-    exit 1
+if command -v file >/dev/null 2>&1; then
+    if ! file "${UKI_EFI}" | grep -q "PE32+"; then
+        echo "ERROR: UKI is not a valid PE32+ executable!" >&2
+        exit 1
+    fi
 fi
 
 # 6. Format and Populate EFI System Partition (FAT32)
