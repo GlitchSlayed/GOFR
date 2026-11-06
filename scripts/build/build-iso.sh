@@ -43,12 +43,19 @@ KVER=""
 for candidate in \
     /lib/modules/*cachyos*/vmlinuz \
     /usr/lib/modules/*cachyos*/vmlinuz \
+    /boot/vmlinuz*cachyos* \
     /lib/modules/*/vmlinuz \
-    /usr/lib/modules/*/vmlinuz; do
+    /usr/lib/modules/*/vmlinuz \
+    /boot/vmlinuz-$(uname -r 2>/dev/null || true) \
+    /boot/vmlinuz-*; do
     if [ -f "${candidate}" ] && [ -r "${candidate}" ]; then
         KERNEL_BIN="${candidate}"
         if [[ "${candidate}" =~ /modules/([^/]+)/vmlinuz ]]; then
             KVER="${BASH_REMATCH[1]}"
+        elif [[ "${candidate}" =~ /boot/vmlinuz-([^/]+) ]]; then
+            KVER="${BASH_REMATCH[1]}"
+        else
+            KVER="$(uname -r 2>/dev/null || echo "6.12.0")"
         fi
         break
     fi
@@ -99,6 +106,15 @@ gcc -nostdlib -static "${WORK_DIR}/installer-init.c" -o "${INITRD_STAGING}/init"
 chmod 0755 "${INITRD_STAGING}/init"
 (cd "${INITRD_STAGING}" && find . | cpio -o -H newc 2>/dev/null) | gzip -c > "${INSTALLER_INITRD}"
 
+# Installer os-release
+cat << 'EOF' > "${WORK_DIR}/installer-os-release"
+NAME="GOFR Installer"
+ID=gofr-installer
+ID_LIKE="fedora"
+VERSION_ID=45
+PRETTY_NAME="GOFR 45 Installer"
+EOF
+
 ISO_UKI="${WORK_DIR}/gofr-installer.efi"
 CMDLINE="console=ttyS0 panic=-1 init=/init inst.stage2=hd:LABEL=GOFR_45_X86_64 inst.ks=hd:LABEL=GOFR_45_X86_64:/kickstart/gofr-workstation.ks"
 
@@ -107,7 +123,7 @@ if command -v ukify >/dev/null 2>&1; then
         --linux "${KERNEL_BIN}" \
         --initrd "${INSTALLER_INITRD}" \
         --cmdline "${CMDLINE}" \
-        --os-release "@${ROOT_DIR}/packaging/gofr-release/gofr-release.spec" \
+        --os-release "@${WORK_DIR}/installer-os-release" \
         --stub "${STUB_EFI}" \
         --output "${ISO_UKI}"
 else
@@ -120,7 +136,7 @@ else
             --linux "${KERNEL_BIN}" \
             --initrd "${INSTALLER_INITRD}" \
             --cmdline "${CMDLINE}" \
-            --os-release "@${ROOT_DIR}/packaging/gofr-release/gofr-release.spec" \
+            --os-release "@${WORK_DIR}/installer-os-release" \
             --stub "${STUB_EFI}" \
             --output "${ISO_UKI}"
 fi

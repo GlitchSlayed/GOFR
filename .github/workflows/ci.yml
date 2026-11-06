@@ -50,12 +50,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             qemu-system-x86 \
+            qemu-utils \
             ovmf \
             mtools \
             dosfstools \
             btrfs-progs \
             genisoimage \
-            fdisk
+            fdisk \
+            systemd-ukify \
+            linux-image-generic \
+            build-essential
+          sudo chmod +r /boot/vmlinuz* /boot/* 2>/dev/null || true
 
       - name: Download built RPMs
         uses: actions/download-artifact@v4

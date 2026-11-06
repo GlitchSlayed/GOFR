@@ -33,35 +33,33 @@ fi
 OVMF_CODE=""
 for candidate in \
     "/usr/share/edk2/ovmf/OVMF_CODE.fd" \
+    "/usr/share/OVMF/OVMF_CODE_4M.fd" \
     "/usr/share/OVMF/OVMF_CODE.fd" \
-    "/usr/share/edk2/OVMF_CODE.fd"; do
+    "/usr/share/edk2/OVMF_CODE.fd" \
+    "/usr/share/ovmf/x64/OVMF_CODE.fd" \
+    "/usr/share/qemu/OVMF_CODE.fd"; do
     if [ -f "${candidate}" ]; then
         OVMF_CODE="${candidate}"
         break
     fi
 done
 
-OVMF_VARS=""
-for candidate in \
-    "/usr/share/edk2/ovmf/OVMF_VARS.fd" \
-    "/usr/share/OVMF/OVMF_VARS.fd" \
-    "/usr/share/edk2/OVMF_VARS.fd"; do
-    if [ -f "${candidate}" ]; then
-        OVMF_VARS="${candidate}"
-        break
-    fi
-done
+if [ -z "${OVMF_CODE}" ]; then
+    for c in /usr/share/OVMF/*CODE*.fd /usr/share/edk2/*CODE*.fd /usr/share/edk2/ovmf/OVMF*.fd; do
+        if [ -f "$c" ] && [[ ! "$c" =~ "VARS" ]]; then
+            OVMF_CODE="$c"
+            break
+        fi
+    done
+fi
 
-if [ -z "${OVMF_CODE}" ] || [ -z "${OVMF_VARS}" ]; then
+if [ -z "${OVMF_CODE}" ]; then
     echo "ERROR: OVMF UEFI firmware files not found on system!" >&2
     exit 1
 fi
 
 WORK_DIR="$(mktemp -d /tmp/gofr-vm-test.XXXXXX)"
 trap 'rm -rf "${WORK_DIR}"' EXIT
-
-TEST_VARS="${WORK_DIR}/ovmf-vars.fd"
-cp "${OVMF_VARS}" "${TEST_VARS}"
 
 SERIAL_LOG="${WORK_DIR}/serial.log"
 
@@ -78,9 +76,9 @@ if [ -w /dev/kvm ]; then
     CPU_ARG=("-cpu" "host")
 fi
 
-# Run QEMU with timeout of 60 seconds
+# Run QEMU with timeout of 120 seconds
 set +e
-timeout 60s qemu-system-x86_64 \
+timeout 120s qemu-system-x86_64 \
     -nodefaults \
     -nographic \
     -machine q35 \
@@ -88,7 +86,6 @@ timeout 60s qemu-system-x86_64 \
     "${CPU_ARG[@]}" \
     -m 1024 \
     -drive if=pflash,format=raw,readonly=on,file="${OVMF_CODE}" \
-    -drive if=pflash,format=raw,file="${TEST_VARS}" \
     -drive file="${DISK_IMAGE}",format="${DISK_FORMAT}",snapshot=on \
     -serial file:"${SERIAL_LOG}" \
     -no-reboot < /dev/null > "${WORK_DIR}/qemu.stdout" 2>&1

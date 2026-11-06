@@ -42,12 +42,19 @@ KVER=""
 for candidate in \
     /lib/modules/*cachyos*/vmlinuz \
     /usr/lib/modules/*cachyos*/vmlinuz \
+    /boot/vmlinuz*cachyos* \
     /lib/modules/*/vmlinuz \
-    /usr/lib/modules/*/vmlinuz; do
+    /usr/lib/modules/*/vmlinuz \
+    /boot/vmlinuz-$(uname -r 2>/dev/null || true) \
+    /boot/vmlinuz-*; do
     if [ -f "${candidate}" ] && [ -r "${candidate}" ]; then
         KERNEL_BIN="${candidate}"
         if [[ "${candidate}" =~ /modules/([^/]+)/vmlinuz ]]; then
             KVER="${BASH_REMATCH[1]}"
+        elif [[ "${candidate}" =~ /boot/vmlinuz-([^/]+) ]]; then
+            KVER="${BASH_REMATCH[1]}"
+        else
+            KVER="$(uname -r 2>/dev/null || echo "6.12.0")"
         fi
         break
     fi
