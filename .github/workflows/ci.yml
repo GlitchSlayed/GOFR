@@ -21,7 +21,7 @@ jobs:
           git config --global --add safe.directory "*"
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Verify Fedora environment
         run: |
@@ -41,7 +41,7 @@ jobs:
           make rpms
 
       - name: Archive RPM artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gofr-rpms
           path: out/rpms/*.rpm
@@ -76,7 +76,7 @@ jobs:
           git config --global --add safe.directory "*"
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Verify Fedora environment
         run: |
@@ -86,7 +86,7 @@ jobs:
           ls -la /usr/share/edk2/ovmf/OVMF_CODE.fd
 
       - name: Download built RPMs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: gofr-rpms
           path: out/rpms
@@ -116,7 +116,7 @@ jobs:
           make test-lifecycle
 
       - name: Archive checksums
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gofr-checksums
           path: out/SHA256SUMS
