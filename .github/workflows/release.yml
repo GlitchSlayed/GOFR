@@ -122,25 +122,25 @@ jobs:
           echo "Publishing GitHub Release for GOFR ${RELEASE_TAG}..."
 
           cat << 'NOTES_EOF' > /tmp/release-notes.md
-# GOFR RELEASE_TAG_PLACEHOLDER — Glitchy's Opinionated Fedora Remix
+          # GOFR RELEASE_TAG_PLACEHOLDER — Glitchy's Opinionated Fedora Remix
 
-Official automated release build based on **Fedora Workstation FEDORA_MAJOR_PLACEHOLDER**.
+          Official automated release build based on **Fedora Workstation FEDORA_MAJOR_PLACEHOLDER**.
 
-## Highlights & System Architecture
-- **Base Environment:** Fedora Workstation FEDORA_MAJOR_PLACEHOLDER (`@workstation-product-environment`, GNOME Desktop, Wayland, GDM, PipeWire)
-- **Performance Kernel:** CachyOS performance kernel (`kernel-cachyos`) from maintained Fedora COPR
-- **Unified Kernel Image:** Type #2 Unified Kernel Image (BLS Type #2) assembled with RustyUKI and `ukify`
-- **Boot Manager:** Native `systemd-boot` configured on a dedicated 4 GiB FAT32 EFI System Partition (`/efi`)
-- **Filesystem Architecture:** Btrfs root filesystem with subvolumes `@` (root) and `@home`, transparent zstd:1 compression
-- **Modern CLI Stack:** `zoxide`, `uutils-coreutils`, `ripgrep`, `fd-find`, `bat`, `eza`, `btop`
-- **Default Login Shell:** Brush shell (`brush`) registered in `/etc/shells` with safe bash compatibility
-- **Security Posture:** SELinux in Enforcing mode, uninitialized machine-id for fresh first-boot initialization
+          ## Highlights & System Architecture
+          - **Base Environment:** Fedora Workstation FEDORA_MAJOR_PLACEHOLDER (\`@workstation-product-environment\`, GNOME Desktop, Wayland, GDM, PipeWire)
+          - **Performance Kernel:** CachyOS performance kernel (\`kernel-cachyos\`) from maintained Fedora COPR
+          - **Unified Kernel Image:** Type #2 Unified Kernel Image (BLS Type #2) assembled with RustyUKI and \`ukify\`
+          - **Boot Manager:** Native \`systemd-boot\` configured on a dedicated 4 GiB FAT32 EFI System Partition (\`/efi\`)
+          - **Filesystem Architecture:** Btrfs root filesystem with subvolumes \`@\` (root) and \`@home\`, transparent zstd:1 compression
+          - **Modern CLI Stack:** \`zoxide\`, \`uutils-coreutils\`, \`ripgrep\`, \`fd-find\`, \`bat\`, \`eza\`, \`btop\`
+          - **Default Login Shell:** Brush shell (\`brush\`) registered in \`/etc/shells\` with safe bash compatibility
+          - **Security Posture:** SELinux in Enforcing mode, uninitialized machine-id for fresh first-boot initialization
 
-## Verification Checksums
-```
-CHECKSUMS_PLACEHOLDER
-```
-NOTES_EOF
+          ## Verification Checksums
+          \`\`\`
+          CHECKSUMS_PLACEHOLDER
+          \`\`\`
+          NOTES_EOF
 
           sed -i "s/RELEASE_TAG_PLACEHOLDER/${RELEASE_TAG}/g" /tmp/release-notes.md
           sed -i "s/FEDORA_MAJOR_PLACEHOLDER/${FEDORA_MAJOR}/g" /tmp/release-notes.md
