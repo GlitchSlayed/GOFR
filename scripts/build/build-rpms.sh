@@ -52,10 +52,17 @@ else
         '
 fi
 
-# Also include pre-built sibling packages (rustyuki and brush-shell) if present
-if [ -f "/tmp/rustyuki-0.2.0-1.fc45.x86_64.rpm" ]; then
-    cp -v "/tmp/rustyuki-0.2.0-1.fc45.x86_64.rpm" "${OUT_DIR}/"
+# Also include pre-built sibling packages (rustyuki and brush-shell)
+RUSTYUKI_RPM="${OUT_DIR}/rustyuki-0.2.0-1.fc45.x86_64.rpm"
+if [ ! -f "${RUSTYUKI_RPM}" ]; then
+    if [ -f "/tmp/rustyuki-0.2.0-1.fc45.x86_64.rpm" ]; then
+        cp -v "/tmp/rustyuki-0.2.0-1.fc45.x86_64.rpm" "${OUT_DIR}/"
+    else
+        echo "Fetching RustyUKI upstream Fedora 45 RPM..."
+        curl -sSL "https://github.com/GlitchSlayed/RustyUKI/releases/download/rpm-nightly-20261105-47f556bc/rustyuki-0.2.0-1.fc45.x86_64.rpm" -o "${RUSTYUKI_RPM}" || true
+    fi
 fi
+
 if [ -f "/tmp/brush-shell-0.4.0-1.fc45.x86_64.rpm" ]; then
     cp -v "/tmp/brush-shell-0.4.0-1.fc45.x86_64.rpm" "${OUT_DIR}/"
 fi

@@ -82,6 +82,7 @@ for cmd_pkg in \
     "gcc:gcc" \
     "cpio:cpio" \
     "gzip:gzip" \
+    "curl:curl" \
     "file:file"; do
     cmd="${cmd_pkg%%:*}"
     pkg="${cmd_pkg##*:}"
@@ -125,6 +126,12 @@ dnf5 install -y \
     "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${FEDORA_RELEASE}.noarch.rpm" \
     "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${FEDORA_RELEASE}.noarch.rpm" || true
 
+# Ensure RustyUKI RPM is available
+if [ ! -f "${RPMS_DIR}/rustyuki-0.2.0-1.fc45.x86_64.rpm" ]; then
+    echo "Fetching RustyUKI upstream Fedora 45 RPM..."
+    curl -sSL "https://github.com/GlitchSlayed/RustyUKI/releases/download/rpm-nightly-20261105-47f556bc/rustyuki-0.2.0-1.fc45.x86_64.rpm" -o "${RPMS_DIR}/rustyuki-0.2.0-1.fc45.x86_64.rpm" || true
+fi
+
 # 5. Populate Root Filesystem via dnf5 --installroot
 echo "Installing Fedora Workstation product environment (@workstation-product-environment)..."
 echo "This will provision GNOME, Wayland, GDM, PipeWire, CachyOS kernel, and GOFR packages."
@@ -148,7 +155,8 @@ dnf5 --installroot="${ROOT_SUBVOL}" \
     bat \
     eza \
     btop \
-    "${RPMS_DIR}"/*.rpm
+    "${RPMS_DIR}"/*.noarch.rpm \
+    "${RPMS_DIR}"/*.x86_64.rpm
 
 echo "Cleaning installroot package cache..."
 dnf5 --installroot="${ROOT_SUBVOL}" clean all
