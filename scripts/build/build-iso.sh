@@ -65,6 +65,22 @@ for candidate in \
 done
 
 if [ -z "${KERNEL_BIN}" ]; then
+    if command -v dnf5 >/dev/null 2>&1 && [ "$(id -u)" -eq 0 ]; then
+        echo "No kernel found, installing kernel-core..."
+        dnf5 install -y kernel-core >/dev/null 2>&1 || true
+        for candidate in /lib/modules/*/vmlinuz /usr/lib/modules/*/vmlinuz; do
+            if [ -f "${candidate}" ]; then
+                KERNEL_BIN="${candidate}"
+                if [[ "${candidate}" =~ /modules/([^/]+)/vmlinuz ]]; then
+                    KVER="${BASH_REMATCH[1]}"
+                fi
+                break
+            fi
+        done
+    fi
+fi
+
+if [ -z "${KERNEL_BIN}" ]; then
     echo "ERROR: No readable Linux kernel found!" >&2
     exit 1
 fi

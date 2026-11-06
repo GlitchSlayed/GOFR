@@ -41,9 +41,11 @@ jobs:
             qemu-img \
             edk2-ovmf \
             systemd-ukify \
+            kernel-core \
             btrfs-progs \
             dosfstools \
             mtools \
+            genisoimage \
             fdisk \
             dracut \
             gcc \
