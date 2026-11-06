@@ -84,6 +84,7 @@ for cmd_pkg in \
     "gcc:gcc" \
     "cpio:cpio" \
     "gzip:gzip" \
+    "xz:xz" \
     "curl:curl" \
     "file:file"; do
     cmd="${cmd_pkg%%:*}"
@@ -347,15 +348,18 @@ echo "Writing Btrfs root partition into raw image..."
 dd if="${ROOT_PART}" of="${RAW_IMAGE}" bs=1M seek=$((1 + ESP_SIZE_MIB)) conv=notrunc status=none
 rm -f "${ROOT_PART}"
 
-# 11. Convert to Compressed QCOW2 Image
+# 11. Convert to Compressed QCOW2 Image and XZ Archive
 echo "Converting raw disk image to compressed QCOW2 format..."
 qemu-img convert -f raw -O qcow2 -c "${RAW_IMAGE}" "${QCOW_IMAGE}"
+
+echo "Compressing QCOW2 image with xz for distribution (ensures < 2GB GitHub Release upload)..."
+xz -T0 -k -6 "${QCOW_IMAGE}"
 
 # 12. Checksums and Manifest Generation
 echo "Computing SHA256 checksums..."
 (
     cd "${OUT_DIR}"
-    sha256sum "${IMAGE_NAME}.raw" "${IMAGE_NAME}.qcow2" > "${SHA256_FILE}"
+    sha256sum "${IMAGE_NAME}.raw" "${IMAGE_NAME}.qcow2" "${IMAGE_NAME}.qcow2.xz" > "${SHA256_FILE}"
 )
 
 cat << EOF > "${MANIFEST_FILE}"
@@ -374,6 +378,7 @@ cat << EOF > "${MANIFEST_FILE}"
   "artifacts": [
     "${IMAGE_NAME}.raw",
     "${IMAGE_NAME}.qcow2",
+    "${IMAGE_NAME}.qcow2.xz",
     "SHA256SUMS"
   ]
 }
@@ -381,8 +386,9 @@ EOF
 
 echo "=============================================================================="
 echo " GOFR Workstation Release Build Complete!"
-echo " Raw Image:   ${RAW_IMAGE} ($(ls -lh "${RAW_IMAGE}" | awk '{print $5}'))"
-echo " QCOW2 Image: ${QCOW_IMAGE} ($(ls -lh "${QCOW_IMAGE}" | awk '{print $5}'))"
-echo " Checksums:   ${SHA256_FILE}"
-echo " Manifest:    ${MANIFEST_FILE}"
+echo " Raw Image:      ${RAW_IMAGE} ($(ls -lh "${RAW_IMAGE}" | awk '{print $5}'))"
+echo " QCOW2 Image:    ${QCOW_IMAGE} ($(ls -lh "${QCOW_IMAGE}" | awk '{print $5}'))"
+echo " QCOW2 XZ Image: ${QCOW_IMAGE}.xz ($(ls -lh "${QCOW_IMAGE}.xz" | awk '{print $5}'))"
+echo " Checksums:      ${SHA256_FILE}"
+echo " Manifest:       ${MANIFEST_FILE}"
 echo "=============================================================================="

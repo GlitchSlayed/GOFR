@@ -49,6 +49,7 @@ jobs:
             gcc \
             cpio \
             gzip \
+            xz \
             curl \
             gh \
             file
@@ -109,7 +110,7 @@ jobs:
         with:
           name: gofr-workstation-release-${{ steps.versioning.outputs.tag }}
           path: |
-            out/release/*.qcow2
+            out/release/*.qcow2.xz
             out/release/SHA256SUMS
             out/release/manifest.json
 
@@ -136,6 +137,15 @@ jobs:
           - **Default Login Shell:** Brush shell (\`brush\`) registered in \`/etc/shells\` with safe bash compatibility
           - **Security Posture:** SELinux in Enforcing mode, uninitialized machine-id for fresh first-boot initialization
 
+          ## Quick Start (QEMU / KVM / Proxmox)
+          Decompress the release disk image:
+          \`\`\`bash
+          unxz gofr-workstation-RELEASE_TAG_PLACEHOLDER-x86_64.qcow2.xz
+          qemu-system-x86_64 -enable-kvm -m 4G -smp 4 \\
+            -bios /usr/share/edk2/ovmf/OVMF_CODE.fd \\
+            -drive file=gofr-workstation-RELEASE_TAG_PLACEHOLDER-x86_64.qcow2,format=qcow2
+          \`\`\`
+
           ## Verification Checksums
           \`\`\`
           CHECKSUMS_PLACEHOLDER
@@ -150,6 +160,6 @@ jobs:
           gh release create "${RELEASE_TAG}" \
             --title "GOFR ${RELEASE_TAG} (Fedora Workstation ${FEDORA_MAJOR})" \
             --notes-file /tmp/release-notes.md \
-            out/release/*.qcow2 \
+            out/release/*.qcow2.xz \
             out/release/SHA256SUMS \
             out/release/manifest.json
