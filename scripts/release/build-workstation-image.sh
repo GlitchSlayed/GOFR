@@ -348,18 +348,27 @@ echo "Writing Btrfs root partition into raw image..."
 dd if="${ROOT_PART}" of="${RAW_IMAGE}" bs=1M seek=$((1 + ESP_SIZE_MIB)) conv=notrunc status=none
 rm -f "${ROOT_PART}"
 
-# 11. Convert to Compressed QCOW2 Image and XZ Archive
+# 11. Convert to Compressed QCOW2 Image
 echo "Converting raw disk image to compressed QCOW2 format..."
 qemu-img convert -f raw -O qcow2 -c "${RAW_IMAGE}" "${QCOW_IMAGE}"
 
-echo "Compressing QCOW2 image with xz for distribution (ensures < 2GB GitHub Release upload)..."
-xz -T0 -k -6 "${QCOW_IMAGE}"
+# Check if QCOW2 image exceeds GitHub's 2GB (2,147,483,648 bytes) release asset upload limit
+QCOW_SIZE=$(stat -c%s "${QCOW_IMAGE}")
+if [ "${QCOW_SIZE}" -ge 2000000000 ]; then
+    echo "QCOW2 image (${QCOW_SIZE} bytes) exceeds GitHub Release 2GB upload limit."
+    echo "Splitting into 1800MB chunks for reliable distribution..."
+    (
+        cd "${OUT_DIR}"
+        split -b 1800M -d -a 2 "${IMAGE_NAME}.qcow2" "${IMAGE_NAME}.qcow2.part"
+    )
+fi
 
 # 12. Checksums and Manifest Generation
 echo "Computing SHA256 checksums..."
 (
     cd "${OUT_DIR}"
-    sha256sum "${IMAGE_NAME}.raw" "${IMAGE_NAME}.qcow2" "${IMAGE_NAME}.qcow2.xz" > "${SHA256_FILE}"
+    rm -f "${SHA256_FILE}"
+    sha256sum "${IMAGE_NAME}.raw" "${IMAGE_NAME}.qcow2"* > "${SHA256_FILE}"
 )
 
 cat << EOF > "${MANIFEST_FILE}"
@@ -378,7 +387,6 @@ cat << EOF > "${MANIFEST_FILE}"
   "artifacts": [
     "${IMAGE_NAME}.raw",
     "${IMAGE_NAME}.qcow2",
-    "${IMAGE_NAME}.qcow2.xz",
     "SHA256SUMS"
   ]
 }
@@ -388,7 +396,9 @@ echo "==========================================================================
 echo " GOFR Workstation Release Build Complete!"
 echo " Raw Image:      ${RAW_IMAGE} ($(ls -lh "${RAW_IMAGE}" | awk '{print $5}'))"
 echo " QCOW2 Image:    ${QCOW_IMAGE} ($(ls -lh "${QCOW_IMAGE}" | awk '{print $5}'))"
-echo " QCOW2 XZ Image: ${QCOW_IMAGE}.xz ($(ls -lh "${QCOW_IMAGE}.xz" | awk '{print $5}'))"
+if ls "${QCOW_IMAGE}.part"* 1> /dev/null 2>&1; then
+    echo " QCOW2 Chunks:   $(ls -1 "${QCOW_IMAGE}.part"* | xargs -n1 basename | tr '\n' ' ')"
+fi
 echo " Checksums:      ${SHA256_FILE}"
 echo " Manifest:       ${MANIFEST_FILE}"
 echo "=============================================================================="
