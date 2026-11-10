@@ -5,6 +5,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [45.4] - 2026-11-10
+
+### Added
+- **Libadwaita Welcome & UKI Selector Application (`gofr-welcome`):**
+  - Modern GTK 4 / Libadwaita onboarding application (`src/welcome/gofr-welcome`) featuring an architecture overview and interactive graphical UKI backend selection.
+  - Automatically records the user's choice to `/tmp/gofr-boot-backend` and hooks into Kickstart (`%post --nochroot`) to configure the target system's `/etc/rustyuki/config.toml` before initial UKI generation.
+  - Packaged into official RPM `gofr-welcome` with desktop entry and live-environment autostart support.
+- **Instant systemd-boot with 3-Second Failure Recovery Window:**
+  - Configured `timeout 0` in `loader.conf` so healthy boots execute immediately with zero seconds countdown.
+  - Upstream `RustyUKI` now automatically arms `bootctl set-timeout-oneshot 3` during kernel update trial boots, ensuring an interactive 3-second recovery window is visible if an updated kernel fails or hangs.
+  - Clears one-shot timeout upon confirmation (`rustyuki confirm`).
+- **Multi-Tiered Fallback Architecture Documentation:**
+  - Added comprehensive fallback cascade specifications to `docs/BOOT.md` and `docs/ARCHITECTURE.md`:
+    - Direct UKI: Latest UKI (`BootNext`) → Previous UKI (`BootOrder[0]`) → `systemd-boot` emergency rescue menu → UEFI Fallback / GRUB.
+    - systemd-boot: Instant default UKI (`timeout 0`) → 3s trial recovery window → Automatic `.prev.efi` fallback → Interactive boot menu (<kbd>Space</kbd>/<kbd>Esc</kbd>) → Fallback bootloader.
+- **Upstream RustyUKI Packaging:**
+  - Updated integration to consume RustyUKI `0.2.0` (commit `f63f10f`, tag `rpm-nightly-20261110-f63f10fc`).
+
+---
+
 ## [45.3] - 2026-11-10
 
 ### Fixed & Upstream Alignments

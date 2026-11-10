@@ -59,7 +59,7 @@ if [ ! -f "${RUSTYUKI_RPM}" ]; then
         cp -v "/tmp/rustyuki-0.2.0-1.fc45.x86_64.rpm" "${OUT_DIR}/"
     else
         echo "Fetching RustyUKI upstream Fedora 45 RPM..."
-        curl -sSL "https://github.com/GlitchSlayed/RustyUKI/releases/download/rpm-nightly-20261110-6320ec94/rustyuki-0.2.0-1.fc45.x86_64.rpm" -o "${RUSTYUKI_RPM}" || true
+        curl -sSL "https://github.com/GlitchSlayed/RustyUKI/releases/download/rpm-nightly-20261110-f63f10fc/rustyuki-0.2.0-1.fc45.x86_64.rpm" -o "${RUSTYUKI_RPM}" || true
     fi
 fi
 

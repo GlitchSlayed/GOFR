@@ -8,7 +8,7 @@ This document details the architecture, boundaries, runtime integration, and ver
 
 RustyUKI is maintained independently at `https://github.com/GlitchSlayed/RustyUKI`.
 
-- **Release Consumed:** `0.2.0` (commit `6320ec9`, tag `rpm-nightly-20261110-6320ec94`)
+- **Release Consumed:** `0.2.0` (commit `f63f10f`, tag `rpm-nightly-20261110-f63f10fc`)
 - **Upstream Package:** `rustyuki-0.2.0-1.fc45.x86_64.rpm` / `rustyuki-0.2.0-1.fc44.x86_64.rpm`
 - **Ownership Division:**
   - Upstream `rustyuki` owns:

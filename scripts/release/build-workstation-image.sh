@@ -150,7 +150,7 @@ dnf5 install -y \
 # Ensure RustyUKI RPM is available
 if [ ! -f "${RPMS_DIR}/rustyuki-0.2.0-1.fc45.x86_64.rpm" ]; then
     echo "Fetching RustyUKI upstream Fedora 45 RPM..."
-    curl -sSL "https://github.com/GlitchSlayed/RustyUKI/releases/download/rpm-nightly-20261110-6320ec94/rustyuki-0.2.0-1.fc45.x86_64.rpm" -o "${RPMS_DIR}/rustyuki-0.2.0-1.fc45.x86_64.rpm" || true
+    curl -sSL "https://github.com/GlitchSlayed/RustyUKI/releases/download/rpm-nightly-20261110-f63f10fc/rustyuki-0.2.0-1.fc45.x86_64.rpm" -o "${RPMS_DIR}/rustyuki-0.2.0-1.fc45.x86_64.rpm" || true
 fi
 
 # 5. Populate Root Filesystem via dnf5 --installroot

@@ -97,9 +97,11 @@ GOFR uses **Boot Loader Specification (BLS) Type #2**:
        └── Subvolume @home               (Mounted at /home)
 ```
 
-- **Bootloader:** `systemd-boot` natively scans `/efi/EFI/Linux/` and presents discovered `.efi` binaries in the boot menu.
+- **Bootloader:** `systemd-boot` natively scans `/efi/EFI/Linux/` and presents discovered `.efi` binaries in the boot menu. Normal boots execute instantly (`timeout 0`), while trial boots or failed boots automatically arm a 3-second one-shot recovery window.
+- **Direct UKI Option:** Optionally boots directly from UEFI firmware NVRAM via `efibootmgr`, bypassing intermediate bootloaders for maximum performance with one-shot `BootNext` trial protection.
+- **Graphical Onboarding (`gofr-welcome`):** A native Libadwaita application presented during live installation sessions allowing users to graphically select between `systemd-boot` and `Direct UKI`.
 - **UKI Builder:** [RustyUKI](https://github.com/GlitchSlayed/RustyUKI) and `systemd-ukify` compile the PE binary.
-- **Rollback Durability:** During kernel updates, the prior operational UKI is preserved as `.prev.efi`. If an updated kernel fails to boot, users can select the previous kernel from the `systemd-boot` menu.
+- **Rollback Durability:** During kernel updates, the prior operational UKI is preserved as `.prev.efi`. If an updated kernel fails to boot, the system automatically falls back to the previous kernel.
 
 ---
 
