@@ -140,8 +140,9 @@ EOF
 touch "${ROOT_SUBVOL}/run/ostree-booted"
 
 # 4. Configure upstream repositories on host
-echo "Enabling CachyOS Copr and RPM Fusion repositories..."
+echo "Enabling CachyOS Copr, Starship Copr, and RPM Fusion repositories..."
 dnf5 copr enable -y bieszczaders/kernel-cachyos || true
+dnf5 copr enable -y atim/starship || true
 dnf5 install -y \
     "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${FEDORA_RELEASE}.noarch.rpm" \
     "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${FEDORA_RELEASE}.noarch.rpm" || true
@@ -168,6 +169,7 @@ dnf5 --installroot="${ROOT_SUBVOL}" \
     systemd-boot \
     systemd-ukify \
     dracut \
+    starship \
     zoxide \
     uutils-coreutils \
     ripgrep \

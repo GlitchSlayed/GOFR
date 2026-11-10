@@ -8,25 +8,26 @@
 
 GOFR embraces a **Netinstall-first architecture** designed for speed, flexibility, and rolling package freshness:
 
-- **Ultra-Compact & Fast Downloads:** A lightweight boot ISO (< 1 GiB) that downloads in seconds and fits directly on official GitHub Releases with incremental versioning (`45.1`, `45.2`, etc.).
+- **Multi-Choice Netinstall Profiles:** The bootable Netinstall ISO includes a `systemd-boot` multi-choice menu:
+  - **GOFR 45 Netinstall (GNOME Workstation) [Default]:** Full modern Fedora Workstation Wayland desktop with PipeWire, WirePlumber, and GDM.
+  - **GOFR 45 Netinstall (Sway Wayland Desktop):** Fast, minimalist Wayland tiling window manager environment (`sway`, `waybar`, `wofi`, `foot`, `mako`).
+  - **GOFR 45 Netinstall (Minimal Developer):** Lean console baseline with Git, Tmux, Neovim, SSH, and the full modern CLI stack.
+  - **GOFR 45 Netinstall (Interactive Anaconda):** Manual interactive installation allowing bespoke disk and package customization.
+- **Ultra-Compact & Fast Downloads:** A lightweight boot ISO (< 200 MiB) that downloads in seconds and fits directly on official GitHub Releases with incremental versioning (`45.1`, `45.2`, etc.).
 - **Always Up-to-Date:** At installation time, packages are resolved and streamed directly from upstream mirrors. You immediately get the freshest CachyOS kernel, upstream Fedora packages, and GOFR updates—completely eliminating the need for a massive multi-gigabyte `dnf upgrade` immediately after installation.
-- **Maximum Customizability:** Because packages are deployed dynamically via Kickstart or Anaconda, you have total control over your system profile:
-  - **Fedora Workstation GNOME (Default):** Full modern Wayland desktop with PipeWire, WirePlumber, and GDM.
-  - **Minimal / Window Managers:** Deploy Sway, COSMIC, or custom window managers without bloat.
-  - **Developer Workstations:** Install specialized toolchains and SDKs during initial deployment.
 - **Pure UKI & systemd-boot Partitioning:** The installer automatically configures a dedicated **4 GiB FAT32 ESP at `/efi`** and a **Btrfs root filesystem with `@` and `@home` subvolumes**, orchestrating initial UKI generation via RustyUKI.
 
 ---
 
 ## Key Highlights
 
-- **Foundation:** Fedora Workstation 45 (`x86_64`) with upstream DNF5, GNOME on Wayland, PipeWire, WirePlumber, and enforcing SELinux.
+- **Foundation:** Fedora Workstation 45 (`x86_64`) with upstream DNF5, GNOME on Wayland, PipeWire, WirePlumber, and enforcing SELinux. Pure Fedora upstream feel with zero extraneous desktop hacks.
 - **Performance Kernel:** High-performance [CachyOS Kernel](https://github.com/CachyOS/linux-cachyos) via maintained Fedora COPR (`bieszczaders/kernel-cachyos`).
 - **Boot Subsystem:** UEFI firmware → `systemd-boot` → Type #2 Unified Kernel Image (BLS Type #2) assembled via [RustyUKI](https://github.com/GlitchSlayed/RustyUKI) and `systemd-ukify`. Direct UKI is supported as an optional experimental backend.
 - **Partition Layout:** 4 GiB FAT32 ESP mounted at `/efi`, Btrfs root filesystem with standard Fedora subvolume conventions (`@` and `@home`), and swap-on-zram.
-- **Repositories:** Fedora Base, Updates, official RPM Fusion Free & Nonfree, and CachyOS COPR enabled with full OpenPGP signature verification.
-- **Default Shell:** [Brush](https://github.com/reubeno/brush) configured as the default interactive login shell for new users via `useradd -D -s /usr/bin/brush`, retaining full POSIX/Bash compatibility for system scripts.
-- **Modern CLI Stack:** [zoxide](https://github.com/ajeetdsouza/zoxide) smart cd, [uutils-coreutils](https://github.com/uutils/coreutils) interactive user space integration, [ripgrep](https://github.com/BurntSushi/ripgrep), [fd-find](https://github.com/sharkdp/fd), [bat](https://github.com/sharkdp/bat), [eza](https://github.com/eza-community/eza), and [btop](https://github.com/aristocratos/btop).
+- **Repositories:** Fedora Base, Updates, official RPM Fusion Free & Nonfree, CachyOS COPR, and Starship COPR enabled with full OpenPGP signature verification.
+- **Default Shell & Prompt:** [Brush](https://github.com/reubeno/brush) configured as the default interactive login shell for new users via `useradd -D -s /usr/bin/brush` paired with the [Starship](https://starship.rs) prompt, retaining full POSIX/Bash compatibility for system scripts.
+- **Modern CLI Stack:** [starship](https://starship.rs) prompt, [zoxide](https://github.com/ajeetdsouza/zoxide) smart cd, [uutils-coreutils](https://github.com/uutils/coreutils) interactive user space integration, [ripgrep](https://github.com/BurntSushi/ripgrep), [fd-find](https://github.com/sharkdp/fd), [bat](https://github.com/sharkdp/bat), [eza](https://github.com/eza-community/eza), and [btop](https://github.com/aristocratos/btop).
 
 ---
 
@@ -112,7 +113,9 @@ GOFR/
 │   ├── SECURE_BOOT.md      # Secure Boot signing and trust enrollment
 │   └── UPSTREAM.md         # Verified upstream repositories and dependencies
 ├── kickstarts/             # Anaconda and image build kickstarts
-│   └── gofr-workstation.ks # Default Fedora Workstation 45 kickstart
+│   ├── gofr-workstation.ks # Default Fedora Workstation 45 GNOME kickstart
+│   ├── gofr-sway.ks        # Sway Wayland desktop kickstart profile
+│   └── gofr-minimal.ks     # Minimal developer baseline kickstart profile
 ├── packaging/              # GOFR custom RPM package definitions
 │   ├── gofr-boot/          # Bootloader, ESP, and kernel-install integration
 │   ├── gofr-defaults/      # Shell, CLI defaults, and user profile configuration

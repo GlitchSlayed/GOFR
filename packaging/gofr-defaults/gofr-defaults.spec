@@ -10,12 +10,13 @@ Requires:       zoxide
 Requires:       uutils-coreutils
 Requires:       bash
 Recommends:     brush-shell
+Recommends:     starship
 
 %description
 Provides GOFR interactive shell profiles, registering Brush as an acceptable
-login shell for new users, configuring zoxide initialization for interactive
-sessions, and providing safe user-space aliases for uutils coreutils while
-preserving standard GNU coreutils for system scripts and transactions.
+login shell for new users, configuring Starship prompt and zoxide initialization
+for interactive sessions, and providing safe user-space aliases for uutils
+coreutils while preserving standard GNU coreutils for system scripts and transactions.
 
 %prep
 # No prep required
@@ -25,12 +26,18 @@ preserving standard GNU coreutils for system scripts and transactions.
 
 %install
 mkdir -p %{buildroot}%{_sysconfdir}/profile.d
+mkdir -p %{buildroot}%{_sysconfdir}/skel/.config/brush
 
-# Interactive profile integration
+# Interactive profile integration (applies to bash, brush, and POSIX shells)
 cat << 'EOF' > %{buildroot}%{_sysconfdir}/profile.d/gofr-defaults.sh
 # GOFR Interactive Environment Setup
 # Only execute for interactive shells
 if [ -n "${PS1:-}" ] || [ -n "${BRUSH_VERSION:-}" ]; then
+    # Initialize starship prompt for interactive shell / brush
+    if command -v starship >/dev/null 2>&1; then
+        eval "$(starship init bash 2>/dev/null)" || true
+    fi
+
     # Initialize zoxide if installed
     if command -v zoxide >/dev/null 2>&1; then
         eval "$(zoxide init posix --hook prompt 2>/dev/null)" || true
@@ -42,6 +49,14 @@ if [ -n "${PS1:-}" ] || [ -n "${BRUSH_VERSION:-}" ]; then
     elif [ -x "/usr/lib/cargo/bin/coreutils" ]; then
         alias uu="/usr/lib/cargo/bin/coreutils"
     fi
+fi
+EOF
+
+# Brush-specific skeleton startup configuration
+cat << 'EOF' > %{buildroot}%{_sysconfdir}/skel/.config/brush/brushrc
+# GOFR Brush Startup Configuration
+if command -v starship >/dev/null 2>&1; then
+    eval "$(starship init bash 2>/dev/null)" || true
 fi
 EOF
 
@@ -66,8 +81,13 @@ fi
 
 %files
 %{_sysconfdir}/profile.d/gofr-defaults.sh
+%dir %{_sysconfdir}/skel/.config
+%dir %{_sysconfdir}/skel/.config/brush
+%config(noreplace) %{_sysconfdir}/skel/.config/brush/brushrc
 
 %changelog
+* Sun Nov 08 2026 GlitchSlayed <60859364+GlitchSlayed@users.noreply.github.com> - 45.0.0-2
+- Configure Starship prompt initialization for Brush and interactive shells
 * Thu Nov 05 2026 GlitchSlayed <60859364+GlitchSlayed@users.noreply.github.com> - 45.0.0-1
 - Align with Fedora 45 versioning
 - Safely manage default login shell via useradd -D rather than clobbering useradd config

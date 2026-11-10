@@ -60,6 +60,21 @@ enabled_metadata=1
 priority=90
 EOF
 
+# Install Starship Copr repository
+cat << 'EOF' > %{buildroot}%{_sysconfdir}/yum.repos.d/atim-starship.repo
+[copr:copr.fedorainfracloud.org:atim:starship]
+name=Copr repo for starship owned by atim
+baseurl=https://download.copr.fedorainfracloud.org/results/atim/starship/fedora-$releasever-$basearch/
+type=rpm-md
+skip_if_unavailable=True
+gpgcheck=1
+gpgkey=https://download.copr.fedorainfracloud.org/results/atim/starship/pubkey.gpg
+repo_gpgcheck=0
+enabled=1
+enabled_metadata=1
+priority=95
+EOF
+
 # Install RPM Fusion Free repository
 cat << 'EOF' > %{buildroot}%{_sysconfdir}/yum.repos.d/rpmfusion-free.repo
 [rpmfusion-free]
@@ -111,12 +126,15 @@ EOF
 %files
 %{_prefix}/lib/gofr-release
 %config(noreplace) %{_sysconfdir}/yum.repos.d/bieszczaders-kernel-cachyos.repo
+%config(noreplace) %{_sysconfdir}/yum.repos.d/atim-starship.repo
 %config(noreplace) %{_sysconfdir}/yum.repos.d/rpmfusion-free.repo
 %config(noreplace) %{_sysconfdir}/yum.repos.d/rpmfusion-free-updates.repo
 %config(noreplace) %{_sysconfdir}/yum.repos.d/rpmfusion-nonfree.repo
 %config(noreplace) %{_sysconfdir}/yum.repos.d/rpmfusion-nonfree-updates.repo
 
 %changelog
+* Sun Nov 08 2026 GlitchSlayed <60859364+GlitchSlayed@users.noreply.github.com> - 45.0.0-2
+- Add Starship Copr repository configuration
 * Thu Nov 05 2026 GlitchSlayed <60859364+GlitchSlayed@users.noreply.github.com> - 45.0.0-1
 - Align with Fedora 45 release versioning
 - Add official RPM Fusion Free and Nonfree repositories

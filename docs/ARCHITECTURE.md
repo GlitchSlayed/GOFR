@@ -117,6 +117,7 @@ GOFR uses **Boot Loader Specification (BLS) Type #2**:
 ## 6. Shell & Modern CLI Stack
 
 - **Default User Login Shell:** [Brush](https://github.com/reubeno/brush) registered in `/etc/shells` and set as the default shell for new user accounts via `useradd -D -s /usr/bin/brush`. Root and system service scripts retain full POSIX / Bash compatibility.
+- **Cross-Shell Prompt:** [Starship](https://starship.rs) initialized automatically for Brush and interactive shells (`/etc/profile.d/gofr-defaults.sh` and skeleton config `/etc/skel/.config/brush/brushrc`).
 - **Smart Directory Navigation:** [zoxide](https://github.com/ajeetdsouza/zoxide) initialized in user interactive sessions (`/etc/profile.d/gofr-defaults.sh`).
 - **Modern User Space Tools:** [uutils-coreutils](https://github.com/uutils/coreutils) exposed via safe interactive alias `uu` while preserving GNU coreutils for script execution.
-- **Modern Terminal Utilities:** Pre-installed [ripgrep](https://github.com/BurntSushi/ripgrep), [fd-find](https://github.com/sharkdp/fd), [bat](https://github.com/sharkdp/bat), [eza](https://github.com/eza-community/eza), and [btop](https://github.com/aristocratos/btop).
+- **Modern Terminal Utilities:** Pre-installed [starship](https://starship.rs), [ripgrep](https://github.com/BurntSushi/ripgrep), [fd-find](https://github.com/sharkdp/fd), [bat](https://github.com/sharkdp/bat), [eza](https://github.com/eza-community/eza), and [btop](https://github.com/aristocratos/btop).

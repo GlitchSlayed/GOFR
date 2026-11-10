@@ -13,6 +13,7 @@ dracut
 rustyuki
 
 # Modern CLI Stack
+starship
 zoxide
 uutils-coreutils
 ripgrep

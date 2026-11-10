@@ -96,15 +96,19 @@ out/rpms/
 
 ## 4. Netinstall ISO Composition (`make iso` / `make netinstall`)
 
-The Netinstall builder script [`scripts/build/build-iso.sh`](../scripts/build/build-iso.sh) produces `gofr-netinstall-<version>-x86_64.iso` (~84 MiB):
+The Netinstall builder script [`scripts/build/build-iso.sh`](../scripts/build/build-iso.sh) produces `gofr-netinstall-<version>-x86_64.iso` (~196 MiB):
 
 ### How the Netinstall ISO is Assembled
 1. **UEFI Boot Layout:** Creates an El Torito hybrid UEFI layout containing `systemd-boot` at `/EFI/BOOT/BOOTX64.EFI`.
-2. **Kernel & Initramfs:** Incorporates the boot kernel (`vmlinuz`) and generated initramfs with network and Kickstart capabilities.
-3. **Kickstart Automation:** Embeds [`kickstarts/gofr-workstation.ks`](../kickstarts/gofr-workstation.ks), configured to:
+2. **Multi-Choice Profile UKIs:** Builds independent BLS Type #2 UKIs for each supported installation profile:
+   - `01-gofr-workstation.efi` (Fedora Workstation GNOME, default)
+   - `02-gofr-sway.efi` (Sway Wayland desktop)
+   - `03-gofr-minimal.efi` (Minimal developer environment)
+   - `04-gofr-interactive.efi` (Interactive Anaconda installer)
+3. **Kickstart Automation:** Embeds all profile kickstart files (`gofr-workstation.ks`, `gofr-sway.ks`, `gofr-minimal.ks`), pre-configured to:
    - Partition target disk with a 4 GiB FAT32 ESP at `/efi` and Btrfs subvolumes (`@` and `@home`).
-   - Stream package groups over the network (`@workstation-product-environment`, `kernel-cachyos`, `brush`, `rustyuki`).
-4. **Hybrid ISO Generation:** Invokes `xorriso` to create an ISO image that is directly bootable from optical media or written byte-for-byte to a USB flash drive (`dd`).
+   - Stream package groups over the network (`@workstation-product-environment` or `@sway-desktop` or minimal dev tools, `kernel-cachyos`, `starship`, `brush`, `rustyuki`).
+4. **Hybrid ISO Generation:** Invokes `xorriso` / `mkisofs` to create an ISO image that is directly bootable from optical media or written byte-for-byte to a USB flash drive (`dd`).
 
 ---
 

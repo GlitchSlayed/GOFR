@@ -2,13 +2,17 @@
 set -euo pipefail
 
 # ==============================================================================
-# GOFR Installable UEFI ISO Builder
+# GOFR Installable UEFI ISO Builder (Multi-Profile Netinstall)
 #
 # Composes an installable UEFI ISO-9660 image with:
 #  - El Torito UEFI boot catalog with embedded FAT EFI System Partition
-#  - systemd-boot loader configuration
-#  - GOFR CachyOS installation UKI
-#  - Automated Anaconda kickstart configuration (configs/partitioning/btrfs-4gb-esp.ks)
+#  - systemd-boot multi-choice profile selection menu:
+#      1. GNOME Workstation (Default)
+#      2. Sway Wayland Desktop
+#      3. Minimal Developer
+#      4. Interactive Anaconda
+#  - Independent BLS Type #2 UKIs for each deployment target
+#  - Embedded Kickstart configurations for all profiles
 #  - Built GOFR RPM package payload repository
 # ==============================================================================
 
@@ -20,10 +24,11 @@ mkdir -p "${OUT_DIR}"
 
 FEDORA_RELEASE="${FEDORA_RELEASE:-45}"
 VERSION_TAG="${VERSION_TAG:-${FEDORA_RELEASE}.1}"
+ISO_LABEL="GOFR_NETINST_${FEDORA_RELEASE}"
 ISO_NAME="gofr-netinstall-${VERSION_TAG}-x86_64.iso"
 ISO_IMAGE="${OUT_DIR}/${ISO_NAME}"
 
-echo "=== Building GOFR Netinstall UEFI ISO (${ISO_NAME}) ==="
+echo "=== Building GOFR Netinstall Multi-Choice UEFI ISO (${ISO_NAME}) ==="
 
 WORK_DIR="$(mktemp -d /tmp/gofr-iso-build.XXXXXX)"
 trap 'rm -rf "${WORK_DIR}"' EXIT
@@ -85,8 +90,10 @@ if [ -z "${KERNEL_BIN}" ]; then
     exit 1
 fi
 
-# 3. Create ISO Installer UKI
-echo "Assembling installer UKI for ISO..."
+echo "Using kernel: ${KERNEL_BIN} (${KVER})"
+
+# 3. Create ISO Installer Initramfs
+echo "Assembling installer initramfs..."
 INSTALLER_INITRD="${WORK_DIR}/installer-initramfs.img"
 INITRD_STAGING="${WORK_DIR}/initrd-staging"
 mkdir -p "${INITRD_STAGING}"/{bin,sbin,dev,proc,sys,etc}
@@ -125,70 +132,102 @@ gcc -nostdlib -static "${WORK_DIR}/installer-init.c" -o "${INITRD_STAGING}/init"
 chmod 0755 "${INITRD_STAGING}/init"
 (cd "${INITRD_STAGING}" && find . | cpio -o -H newc 2>/dev/null) | gzip -c > "${INSTALLER_INITRD}"
 
-# Installer os-release
-cat << 'EOF' > "${WORK_DIR}/installer-os-release"
-NAME="GOFR Installer"
-ID=gofr-installer
+# 4. Helper function to compile a Type #2 UKI
+build_profile_uki() {
+    local uki_id="$1"
+    local pretty_name="$2"
+    local cmdline="$3"
+    local output_efi="${ISO_ROOT}/EFI/Linux/${uki_id}.efi"
+
+    local osrel_file="${WORK_DIR}/os-release-${uki_id}"
+    cat << EOF > "${osrel_file}"
+NAME="GOFR"
+ID=gofr
 ID_LIKE="fedora"
-VERSION_ID=45
-PRETTY_NAME="GOFR 45 Installer"
+VERSION_ID=${FEDORA_RELEASE}
+PRETTY_NAME="${pretty_name}"
 EOF
 
-ISO_UKI="${WORK_DIR}/gofr-installer.efi"
-CMDLINE="console=ttyS0 panic=-1 init=/init inst.stage2=hd:LABEL=GOFR_45_X86_64 inst.ks=hd:LABEL=GOFR_45_X86_64:/kickstart/gofr-workstation.ks"
-
-if command -v ukify >/dev/null 2>&1; then
-    ukify build \
-        --linux "${KERNEL_BIN}" \
-        --initrd "${INSTALLER_INITRD}" \
-        --cmdline "${CMDLINE}" \
-        --os-release "@${WORK_DIR}/installer-os-release" \
-        --stub "${STUB_EFI}" \
-        --output "${ISO_UKI}"
-else
-    podman run --rm \
-        -v "${WORK_DIR}:${WORK_DIR}:z" \
-        -v "${ROOT_DIR}:${ROOT_DIR}:z" \
-        -v "${KERNEL_BIN}:${KERNEL_BIN}:ro" \
-        localhost/rustyuki-dev \
+    echo "Building UKI: ${pretty_name} -> ${uki_id}.efi..."
+    if command -v ukify >/dev/null 2>&1; then
         ukify build \
             --linux "${KERNEL_BIN}" \
             --initrd "${INSTALLER_INITRD}" \
-            --cmdline "${CMDLINE}" \
-            --os-release "@${WORK_DIR}/installer-os-release" \
+            --cmdline "${cmdline}" \
+            --os-release "@${osrel_file}" \
             --stub "${STUB_EFI}" \
-            --output "${ISO_UKI}"
-fi
+            --output "${output_efi}"
+    else
+        podman run --rm \
+            -v "${WORK_DIR}:${WORK_DIR}:z" \
+            -v "${ROOT_DIR}:${ROOT_DIR}:z" \
+            -v "${KERNEL_BIN}:${KERNEL_BIN}:ro" \
+            localhost/rustyuki-dev \
+            ukify build \
+                --linux "${KERNEL_BIN}" \
+                --initrd "${INSTALLER_INITRD}" \
+                --cmdline "${cmdline}" \
+                --os-release "@${osrel_file}" \
+                --stub "${STUB_EFI}" \
+                --output "${output_efi}"
+    fi
+}
 
-# 4. Copy Installer Kickstarts and Packages into ISO Root
+# 5. Build Type #2 UKIs for Multi-Choice Boot Menu
+build_profile_uki \
+    "01-gofr-workstation" \
+    "GOFR 45 Netinstall (GNOME Workstation)" \
+    "console=ttyS0 panic=-1 init=/init inst.stage2=hd:LABEL=${ISO_LABEL} inst.ks=hd:LABEL=${ISO_LABEL}:/kickstart/gofr-workstation.ks"
+
+build_profile_uki \
+    "02-gofr-sway" \
+    "GOFR 45 Netinstall (Sway Wayland Desktop)" \
+    "console=ttyS0 panic=-1 init=/init inst.stage2=hd:LABEL=${ISO_LABEL} inst.ks=hd:LABEL=${ISO_LABEL}:/kickstart/gofr-sway.ks"
+
+build_profile_uki \
+    "03-gofr-minimal" \
+    "GOFR 45 Netinstall (Minimal Developer)" \
+    "console=ttyS0 panic=-1 init=/init inst.stage2=hd:LABEL=${ISO_LABEL} inst.ks=hd:LABEL=${ISO_LABEL}:/kickstart/gofr-minimal.ks"
+
+build_profile_uki \
+    "04-gofr-interactive" \
+    "GOFR 45 Netinstall (Interactive Anaconda)" \
+    "console=ttyS0 panic=-1 init=/init inst.stage2=hd:LABEL=${ISO_LABEL}"
+
+# 6. Copy Kickstart profiles into ISO root
+echo "Copying Kickstart profile manifests..."
 cp -v "${ROOT_DIR}/kickstarts/gofr-workstation.ks" "${ISO_ROOT}/kickstart/"
+cp -v "${ROOT_DIR}/kickstarts/gofr-sway.ks" "${ISO_ROOT}/kickstart/"
+cp -v "${ROOT_DIR}/kickstarts/gofr-minimal.ks" "${ISO_ROOT}/kickstart/"
+
 if [ -d "${ROOT_DIR}/out/rpms" ]; then
-    cp -v "${ROOT_DIR}/out/rpms"/*.rpm "${ISO_ROOT}/packages/" || true
+    cp -v "${ROOT_DIR}/out/rpms"/*.rpm "${ISO_ROOT}/packages/" 2>/dev/null || true
 fi
 
-# 5. Populate EFI and systemd-boot layout in ISO Root
+# 7. Configure systemd-boot loader.conf
 cp "${SDBOOT_EFI}" "${ISO_ROOT}/EFI/BOOT/BOOTX64.EFI"
-cp "${ISO_UKI}" "${ISO_ROOT}/EFI/Linux/gofr-installer.efi"
 
 cat << 'LOADER_CONF' > "${ISO_ROOT}/loader/loader.conf"
-default gofr-installer*
-timeout 5
+default 01-gofr-workstation*
+timeout 10
 console-mode max
 auto-entries 1
+auto-firmware 1
 LOADER_CONF
 
-# 6. Create Embedded FAT EFI Boot Image (images/efiboot.img)
+# 8. Create Embedded FAT EFI Boot Image (images/efiboot.img)
+echo "Generating embedded FAT EFI boot image (128 MiB)..."
 EFIBOOT_IMG="${ISO_ROOT}/images/efiboot.img"
-truncate -s 64M "${EFIBOOT_IMG}"
+truncate -s 128M "${EFIBOOT_IMG}"
 mkfs.vfat -F 32 -n "GOFR_ESP" "${EFIBOOT_IMG}" >/dev/null
 mmd -i "${EFIBOOT_IMG}" ::EFI ::EFI/BOOT ::EFI/Linux ::loader
 mcopy -i "${EFIBOOT_IMG}" "${SDBOOT_EFI}" ::EFI/BOOT/BOOTX64.EFI
 mcopy -i "${EFIBOOT_IMG}" "${ISO_ROOT}/loader/loader.conf" ::loader/loader.conf
-mcopy -i "${EFIBOOT_IMG}" "${ISO_UKI}" ::EFI/Linux/gofr-installer.efi
+mcopy -i "${EFIBOOT_IMG}" "${ISO_ROOT}/EFI/Linux/"*.efi ::EFI/Linux/
 
-# 7. Generate Bootable Hybrid ISO
+# 9. Generate Bootable Hybrid ISO
 echo "Mastering Netinstall ISO filesystem via mkisofs..."
-mkisofs -V "GOFR_NETINST_${FEDORA_RELEASE}" \
+mkisofs -V "${ISO_LABEL}" \
     -J -R \
     -eltorito-alt-boot -e images/efiboot.img -no-emul-boot \
     -o "${ISO_IMAGE}" "${ISO_ROOT}" >/dev/null 2>&1
@@ -199,6 +238,6 @@ ln -sf "${ISO_NAME}" "${OUT_DIR}/gofr-45.0.0-x86_64.iso"
 echo "Generating SHA-256 checksums..."
 (cd "${OUT_DIR}" && sha256sum "${ISO_NAME}" > "${OUT_DIR}/SHA256SUMS")
 
-echo "=== GOFR Netinstall ISO Build Complete ==="
+echo "=== GOFR Netinstall Multi-Choice ISO Build Complete ==="
 echo "ISO artifact: ${ISO_IMAGE} ($(ls -lh "${ISO_IMAGE}" | awk '{print $5}'))"
 cat "${OUT_DIR}/SHA256SUMS"

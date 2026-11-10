@@ -82,8 +82,10 @@ sequenceDiagram
 The Netinstall ISO (`gofr-netinstall-*.iso`) provides an El Torito hybrid UEFI boot structure:
 - UEFI firmware boots `EFI/BOOT/BOOTX64.EFI` from the embedded EFI system partition.
 - `systemd-boot` presents the installation options:
-  - **GOFR Netinstall (Automated Kickstart Workstation)**
-  - **GOFR Netinstall (Interactive Anaconda)**
+  - **GOFR 45 Netinstall (GNOME Workstation) [Default]**
+  - **GOFR 45 Netinstall (Sway Wayland Desktop)**
+  - **GOFR 45 Netinstall (Minimal Developer)**
+  - **GOFR 45 Netinstall (Interactive Anaconda)**
   - **Reboot into Firmware Interface**
 - The installer kernel loads an initramfs with network provisioning and loads package groups directly from upstream mirrors into target disks.
 
