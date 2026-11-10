@@ -31,3 +31,4 @@ gofr-release
 gofr-defaults
 gofr-boot
 gofr-rustyuki-integration
+gofr-welcome

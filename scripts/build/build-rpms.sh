@@ -14,7 +14,7 @@ if command -v rpmbuild >/dev/null 2>&1 && [ "${FORCE_CONTAINER:-0}" != "1" ]; th
     RPMBUILD_DIR="${HOME}/rpmbuild"
     mkdir -p "${RPMBUILD_DIR}"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
-    PACKAGES=(gofr-release gofr-defaults gofr-boot gofr-rustyuki-integration)
+    PACKAGES=(gofr-release gofr-defaults gofr-boot gofr-rustyuki-integration gofr-welcome)
 
     for PKG in "${PACKAGES[@]}"; do
         echo "Building RPM for ${PKG}..."
@@ -38,7 +38,7 @@ else
 
             mkdir -p /root/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
-            PACKAGES=(gofr-release gofr-defaults gofr-boot gofr-rustyuki-integration)
+            PACKAGES=(gofr-release gofr-defaults gofr-boot gofr-rustyuki-integration gofr-welcome)
 
             for PKG in "${PACKAGES[@]}"; do
                 echo "Building RPM for ${PKG}..."

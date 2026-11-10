@@ -34,9 +34,35 @@ bootloader --location=none
 -grubby
 %end
 
+# Copy user's graphical UKI boot selection from live environment into target chroot
+%post --nochroot --log=/mnt/sysimage/root/gofr-post-nochroot.log
+if [ -f /tmp/gofr-boot-backend ]; then
+    mkdir -p /mnt/sysimage/etc/rustyuki
+    cp -v /tmp/gofr-boot-backend /mnt/sysimage/etc/rustyuki/boot-backend.selected 2>/dev/null || true
+elif [ -f /run/gofr-boot-backend ]; then
+    mkdir -p /mnt/sysimage/etc/rustyuki
+    cp -v /run/gofr-boot-backend /mnt/sysimage/etc/rustyuki/boot-backend.selected 2>/dev/null || true
+fi
+%end
+
 # Post-Installation Bootloader and Environment Setup
 %post --erroronfail --log=/root/gofr-post-install.log
 echo "=== Beginning GOFR Post-Installation Configuration ==="
+
+# 0. Apply user's UKI bootloader selection from gofr-welcome if provided
+if [ -f /etc/rustyuki/boot-backend.selected ]; then
+    SELECTED_BACKEND=$(cat /etc/rustyuki/boot-backend.selected | tr -d '[:space:]')
+    rm -f /etc/rustyuki/boot-backend.selected
+    if [ -f /etc/rustyuki/config.toml ]; then
+        if [ "${SELECTED_BACKEND}" = "direct" ]; then
+            echo "Applying user selection: configuring backend = \"direct\" in /etc/rustyuki/config.toml..."
+            sed -i 's/backend = "systemd-boot"/backend = "direct"/' /etc/rustyuki/config.toml
+        elif [ "${SELECTED_BACKEND}" = "systemd-boot" ]; then
+            echo "Applying user selection: configuring backend = \"systemd-boot\" in /etc/rustyuki/config.toml..."
+            sed -i 's/backend = "direct"/backend = "systemd-boot"/' /etc/rustyuki/config.toml
+        fi
+    fi
+fi
 
 # 1. Install and configure systemd-boot on the 4 GiB ESP at /efi
 echo "Setting up systemd-boot on /efi..."

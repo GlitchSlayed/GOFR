@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="gofr-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3584e4"/>
+      <stop offset="50%" stop-color="#1c71d8"/>
+      <stop offset="100%" stop-color="#1a5fb4"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect x="12" y="12" width="104" height="104" rx="28" fill="url(#gofr-grad)" filter="url(#shadow)"/>
+  <!-- stylized "G" and rocket/boot glyph -->
+  <path d="M 64 26 C 43 26 28 41 28 62 C 28 83 43 98 64 98 C 80 98 92 88 97 74 L 81 74 C 77 82 71 86 64 86 C 50 86 40 75 40 62 C 40 49 50 38 64 38 C 72 38 78 42 82 48 L 96 38 C 89 30 78 26 64 26 Z" fill="#ffffff"/>
+  <circle cx="78" cy="62" r="8" fill="#57e389"/>
+</svg>

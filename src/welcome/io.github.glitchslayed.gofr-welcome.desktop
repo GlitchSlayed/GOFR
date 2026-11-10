@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Welcome to GOFR
+Comment=Glitchy's Opinionated Fedora Remix Welcome & Bootloader Setup
+Exec=gofr-welcome --launch-installer
+Icon=io.github.glitchslayed.gofr-welcome
+Terminal=false
+Type=Application
+Categories=System;Settings;Utility;
+StartupNotify=true
+X-GNOME-Autostart-enabled=true

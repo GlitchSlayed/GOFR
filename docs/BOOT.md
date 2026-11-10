@@ -32,6 +32,11 @@ GOFR supports two UEFI boot mechanisms managed by [RustyUKI](https://github.com/
   - Once userland reaches `rustyuki-boot-confirm.service`, `rustyuki confirm` permanently shifts `BootCurrent` to the top of `BootOrder`.
   - If a newly installed kernel faults, a reboot without intervention causes firmware to revert to the previous `BootOrder` entry.
 
+### 1.3 Graphical Backend Selection (`gofr-welcome`)
+- In live installer environments, GOFR provides `gofr-welcome`, a dedicated Libadwaita onboarding application.
+- It displays a welcome summary of the system architecture and features an interactive UKI boot backend selection page.
+- The selected backend is recorded to `/tmp/gofr-boot-backend`, transferred by Kickstart (`%post --nochroot`), and applied automatically to `/etc/rustyuki/config.toml` before initial UKI reconciliation.
+
 ---
 
 ## 2. Loader Configuration (`loader.conf`)

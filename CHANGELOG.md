@@ -24,6 +24,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Configured staged raw disk images with `SELINUX=permissive` and `touch /.autorelabel` to ensure unhindered systemd PID 1 startup and clean filesystem relabeling on initial boot before enforcement.
 
 ### Added
+- **Libadwaita Welcome & UKI Selector (`gofr-welcome`):**
+  - Added modern Libadwaita / GTK 4 welcome application (`gofr-welcome`) featuring an architecture overview page and an interactive UKI bootloader selection page (`systemd-boot` vs. `direct`).
+  - Automatically records the user's graphical choice to `/tmp/gofr-boot-backend` and hooks into Kickstart (`%post --nochroot`) to configure the target system's `/etc/rustyuki/config.toml` before initial UKI generation.
+  - Packaged into official RPM `gofr-welcome` with desktop entry and autostart support in live environments.
 - **Dual Console Kernel Output:**
   - Included `console=tty0 console=ttyS0` in the default workstation kernel commandline template to ensure full visibility during both headless virtual machine debugging and physical display usage.
 - **Bootloader Backend Documentation:**
