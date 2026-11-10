@@ -203,12 +203,13 @@ echo "gofr" > "${ROOT_SUBVOL}/etc/hostname"
 # Machine ID uninitialized (generated on first boot)
 truncate -s 0 "${ROOT_SUBVOL}/etc/machine-id"
 
-# SELinux Enforcing
+# SELinux Configuration: permissive on first boot to allow proper automatic filesystem relabeling
 mkdir -p "${ROOT_SUBVOL}/etc/selinux"
 cat << 'EOF' > "${ROOT_SUBVOL}/etc/selinux/config"
-SELINUX=enforcing
+SELINUX=permissive
 SELINUXTYPE=targeted
 EOF
+touch "${ROOT_SUBVOL}/.autorelabel"
 
 # /etc/fstab with deterministic UUIDs and Btrfs subvolumes
 cat << EOF > "${ROOT_SUBVOL}/etc/fstab"
@@ -221,8 +222,9 @@ EOF
 # Kernel commandline
 mkdir -p "${ROOT_SUBVOL}/etc/kernel"
 cat << EOF > "${ROOT_SUBVOL}/etc/kernel/cmdline"
-root=UUID=${ROOT_UUID} rootflags=subvol=@ rw quiet splash rhgb
+root=UUID=${ROOT_UUID} rootflags=subvol=@ rw quiet splash rhgb console=tty0 console=ttyS0
 EOF
+
 
 # Ensure Brush is registered in /etc/shells if present
 if [ -x "${ROOT_SUBVOL}/usr/bin/brush" ]; then

@@ -1,29 +1,42 @@
 # Boot Architecture & UKI Specification
 
-GOFR boots exclusively via UEFI using `systemd-boot` and Unified Kernel Images (UKIs). This document specifies the boot chain, configuration conventions, runtime lifecycle hooks, and dual-target boot environments (Netinstall ISO vs. Installed System).
+GOFR boots exclusively via UEFI using Unified Kernel Images (UKIs) assembled according to the Boot Loader Specification (BLS). This document specifies the boot chain, supported backends (`systemd-boot` and `direct`), runtime lifecycle hooks, and dual-target boot environments (Netinstall ISO vs. Installed System).
 
 ---
 
-## 1. Boot Loader Specification (BLS) Type #2
+## 1. Boot Loader Backends
 
-Unlike legacy GRUB configurations or BLS Type #1 (which use separate kernel, initramfs, and `.conf` snippets under `/boot/loader/entries/`), GOFR standardizes on **BLS Type #2**:
+GOFR supports two UEFI boot mechanisms managed by [RustyUKI](https://github.com/GlitchSlayed/RustyUKI):
 
-- UKIs are single UEFI PE binaries located at:
+| Backend | Primary Use Case | Entry Discovery | Fallback Mechanism |
+| :--- | :--- | :--- | :--- |
+| **`systemd-boot` (Default)** | General Workstation & ISO install | BLS Type #2 (`$ESP/EFI/Linux/`) | Interactive menu & `.prev.efi` slots |
+| **`direct` (Direct UKI)** | Minimal / Ultra-fast boot | UEFI NVRAM (`efibootmgr`) | One-shot `BootNext` + promotion |
+
+### 1.1 systemd-boot (BLS Type #2)
+- UKIs are standalone UEFI PE binaries located at:
   ```
   $ESP/EFI/Linux/<ENTRY_TOKEN>-<KERNEL_VERSION>.efi
   ```
 - Example:
   ```
-  /efi/EFI/Linux/gofr-7.3.1-1.cachyos1.fc45.x86_64.efi
-  /efi/EFI/Linux/gofr-7.3.1-1.cachyos1.fc45.x86_64.prev.efi
+  /efi/EFI/Linux/gofr-7.3.3-1.cachyos1.fc45.x86_64.efi
+  /efi/EFI/Linux/gofr-7.3.3-1.cachyos1.fc45.x86_64.prev.efi
   ```
-- `systemd-boot` automatically discovers all `.efi` binaries in `$ESP/EFI/Linux/` and presents them in the boot menu ordered chronologically/version-wise without requiring NVRAM entry manipulation.
+- `systemd-boot` automatically discovers all `.efi` binaries in `$ESP/EFI/Linux/` and presents them in the boot menu without requiring NVRAM entry manipulation.
+
+### 1.2 Direct UKI (UEFI NVRAM Direct Boot)
+- UEFI firmware loads the UKI binary directly from `$ESP/EFI/Linux/<name>.efi`.
+- `efibootmgr` manages entries in UEFI NVRAM:
+  - New kernels are registered as trial boot candidates using `BootNext`.
+  - Once userland reaches `rustyuki-boot-confirm.service`, `rustyuki confirm` permanently shifts `BootCurrent` to the top of `BootOrder`.
+  - If a newly installed kernel faults, a reboot without intervention causes firmware to revert to the previous `BootOrder` entry.
 
 ---
 
 ## 2. Loader Configuration (`loader.conf`)
 
-Located at `$ESP/loader/loader.conf`:
+When using the `systemd-boot` backend, configuration is located at `$ESP/loader/loader.conf`:
 
 ```ini
 default gofr*
@@ -49,8 +62,8 @@ Each generated UKI binary contains the following PE sections assembled via `syst
 | `.text` / `.data` | `systemd-stub` | UEFI stub loader executable |
 | `.linux` | `vmlinuz` | CachyOS kernel binary |
 | `.initrd` | `initramfs.img` | Dracut generated initramfs + CPU microcode |
-| `.cmdline` | Kernel parameters | `root=UUID=<UUID> rootflags=subvol=@ ro quiet rhgb` |
-| `.osrel` | `/etc/os-release` | OS metadata identifying GOFR |
+| `.cmdline` | Kernel parameters | `root=UUID=<UUID> rootflags=subvol=@ ro quiet rhgb console=tty0 console=ttyS0` |
+| `.osrel` | `/usr/lib/os-release` | OS metadata identifying GOFR (passed via `@/usr/lib/os-release`) |
 | `.splash` | Optional bitmap | Boot splash graphic |
 
 ---
@@ -99,4 +112,6 @@ When a kernel package is installed or updated via DNF5:
 2. DNF5 triggers `/usr/bin/kernel-install add <version> /usr/lib/modules/<version>/vmlinuz`.
 3. `kernel-install` invokes plugin `/usr/lib/kernel/install.d/90-rustyuki.install`.
 4. RustyUKI reads `/etc/rustyuki/config.toml`, invokes `dracut` to generate the initrd, and `ukify build` to output the new `.efi` directly into `/efi/EFI/Linux/`.
-5. The prior working UKI is automatically retained as `.prev.efi`. If the newly installed kernel encounters a fault, users simply reboot and select the previous kernel from the `systemd-boot` menu.
+5. The prior working UKI is automatically retained as `.prev.efi`. If the newly installed kernel encounters a fault:
+   - Under `systemd-boot`: Users simply reboot and select the previous kernel from the boot menu.
+   - Under `direct`: The system automatically falls back if `rustyuki confirm` was not executed.
