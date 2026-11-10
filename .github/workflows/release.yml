@@ -54,7 +54,8 @@ jobs:
             xz \
             curl \
             gh \
-            file
+            file \
+            python3
           git config --global --add safe.directory "*"
 
       - name: Checkout repository
@@ -138,6 +139,8 @@ jobs:
 
           Official automated release build based on **Fedora Workstation FEDORA_MAJOR_PLACEHOLDER**.
 
+          CHANGELOG_PLACEHOLDER
+
           ## Netinstall Architecture (Recommended Delivery)
           - **Compact & Fast Download:** Download `gofr-netinstall-RELEASE_TAG_PLACEHOLDER-x86_64.iso` (< 1 GiB) in seconds.
           - **Always Up-to-Date:** Packages are streamed live from upstream mirrors during installation.
@@ -168,6 +171,33 @@ jobs:
           CHECKSUMS_PLACEHOLDER
           ```
           NOTES_EOF
+
+          # Extract changelog section from CHANGELOG.md if present
+          if [ -f CHANGELOG.md ]; then
+            python3 -c "
+import sys
+ver = '${RELEASE_TAG}'
+lines = open('CHANGELOG.md').readlines()
+extracting = False
+out = []
+for line in lines:
+    if line.startswith(f'## [{ver}]'):
+        extracting = True
+        continue
+    if extracting and line.startswith('## ['):
+        break
+    if extracting:
+        out.append(line)
+cl = ''.join(out).strip()
+if cl:
+    with open('/tmp/changelog-section.md', 'w') as f:
+        f.write(f'## What\'s Changed in {ver}\n\n' + cl + '\n\n')
+"
+            if [ -f /tmp/changelog-section.md ]; then
+              sed -i "/CHANGELOG_PLACEHOLDER/r /tmp/changelog-section.md" /tmp/release-notes.md
+            fi
+          fi
+          sed -i "s/CHANGELOG_PLACEHOLDER//g" /tmp/release-notes.md
 
           sed -i "s/RELEASE_TAG_PLACEHOLDER/${RELEASE_TAG}/g" /tmp/release-notes.md
           sed -i "s/FEDORA_MAJOR_PLACEHOLDER/${FEDORA_MAJOR}/g" /tmp/release-notes.md
