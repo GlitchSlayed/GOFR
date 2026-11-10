@@ -50,7 +50,7 @@ In `systemd-boot` mode, systemd's lightweight UEFI boot manager provides entry s
   - RustyUKI configures the default entry in `loader.conf` or manages slot state.
   - Fallback retention automatically preserves the prior working kernel as `.prev.efi`.
 - **Tradeoffs & Advantages:**
-  - *Interactive UI:* Provides a 3-second timeout menu allowing manual fallback selection if a new kernel fails to initialize display or networking.
+  - *Instant Normal Boot & Safe Recovery:* Boots instantly (`timeout 0`) on healthy boots, automatically arming a 3-second one-shot timeout menu if a trial boot or boot failure occurs.
   - *Broad Firmware Resilience:* Decouples boot success from quirks in buggy UEFI NVRAM implementations.
 
 ---

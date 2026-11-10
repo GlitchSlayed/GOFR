@@ -28,7 +28,7 @@ mkdir -p %{buildroot}%{_prefix}/lib/systemd/system-preset
 # Default loader.conf template
 cat << 'EOF' > %{buildroot}%{_prefix}/lib/gofr/boot/loader.conf
 default gofr*
-timeout 3
+timeout 0
 console-mode max
 auto-entries 1
 auto-firmware 1

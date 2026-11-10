@@ -45,7 +45,7 @@ When using the `systemd-boot` backend, configuration is located at `$ESP/loader/
 
 ```ini
 default gofr*
-timeout 3
+timeout 0
 console-mode max
 auto-entries 1
 auto-firmware 1
@@ -53,7 +53,7 @@ reboot-for-bitlocker 0
 ```
 
 - `default gofr*`: Boots the newest matching entry by default.
-- `timeout 3`: Gives the user a 3-second window to enter the boot menu or select fallback entries.
+- `timeout 0`: Boots instantly without delay on healthy boots (menu can be shown by holding Space or Esc). During trial boots or after a boot failure, a 3-second one-shot timeout is armed (`set-timeout-oneshot 3`).
 - `auto-entries 1`: Automatically detects EFI/Linux Type #2 images and Windows Boot Manager if dual-booting.
 
 ---
