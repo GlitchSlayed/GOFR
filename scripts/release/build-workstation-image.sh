@@ -234,6 +234,14 @@ if [ -x "${ROOT_SUBVOL}/usr/bin/brush" ]; then
     sed -i 's|^SHELL=.*|SHELL=/usr/bin/brush|' "${ROOT_SUBVOL}/etc/default/useradd" 2>/dev/null || true
 fi
 
+# Disable services causing boot delays or unnecessary background resource consumption
+echo "Disabling NetworkManager-wait-online and ModemManager services in installroot..."
+systemctl --root="${ROOT_SUBVOL}" disable NetworkManager-wait-online.service 2>/dev/null || true
+systemctl --root="${ROOT_SUBVOL}" disable ModemManager.service 2>/dev/null || true
+rm -f "${ROOT_SUBVOL}/etc/systemd/system/network-online.target.wants/NetworkManager-wait-online.service"
+rm -f "${ROOT_SUBVOL}/etc/systemd/system/multi-user.target.wants/ModemManager.service"
+rm -f "${ROOT_SUBVOL}/etc/systemd/system/dbus-org.freedesktop.ModemManager1.service"
+
 # 7. Unified Kernel Image (UKI) Generation
 echo "Locating installed CachyOS Linux kernel..."
 KERNEL_BIN=""

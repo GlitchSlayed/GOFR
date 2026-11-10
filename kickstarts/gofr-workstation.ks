@@ -14,6 +14,7 @@ timezone UTC --utc
 network --bootproto=dhcp --device=link --activate
 firewall --enabled --service=mdns
 selinux --enforcing
+services --disabled=NetworkManager-wait-online,ModemManager
 
 # Repositories
 repo --name=fedora --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-45&arch=x86_64
@@ -80,6 +81,11 @@ fi
 # 3. Assemble initial UKI via RustyUKI
 echo "Generating initial UKI via RustyUKI..."
 /usr/sbin/gofr-uki-reconcile
+
+# 4. Disable slow and unneeded background services by default
+echo "Disabling NetworkManager-wait-online and ModemManager services..."
+systemctl disable NetworkManager-wait-online.service 2>/dev/null || true
+systemctl disable ModemManager.service 2>/dev/null || true
 
 echo "=== GOFR Post-Installation Completed Successfully ==="
 %end

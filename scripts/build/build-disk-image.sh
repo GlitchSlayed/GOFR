@@ -176,6 +176,14 @@ cat << 'EOF' > "${ROOT_SUBVOL}/etc/issue"
 GOFR 45 (Fedora Workstation Remix) - Kernel \r on an \m (\l)
 EOF
 
+# Install systemd preset
+mkdir -p "${ROOT_SUBVOL}/usr/lib/systemd/system-preset"
+cat << 'EOF' > "${ROOT_SUBVOL}/usr/lib/systemd/system-preset/50-gofr.preset"
+# GOFR system presets
+disable NetworkManager-wait-online.service
+disable ModemManager.service
+EOF
+
 # Standalone freestanding init executable for verification and clean system startup
 cat << 'INIT_EOF' > "${WORK_DIR}/init.c"
 #include <sys/syscall.h>

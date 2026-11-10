@@ -123,3 +123,12 @@ GOFR uses **Boot Loader Specification (BLS) Type #2**:
 - **Smart Directory Navigation:** [zoxide](https://github.com/ajeetdsouza/zoxide) initialized in user interactive sessions (`/etc/profile.d/gofr-defaults.sh`).
 - **Modern User Space Tools:** [uutils-coreutils](https://github.com/uutils/coreutils) exposed via safe interactive alias `uu` while preserving GNU coreutils for script execution.
 - **Modern Terminal Utilities:** Pre-installed [starship](https://starship.rs), [ripgrep](https://github.com/BurntSushi/ripgrep), [fd-find](https://github.com/sharkdp/fd), [bat](https://github.com/sharkdp/bat), [eza](https://github.com/eza-community/eza), and [btop](https://github.com/aristocratos/btop).
+
+---
+
+## 7. System Services & Boot Optimization
+
+GOFR trims unneeded startup services to achieve fast desktop boot times and lower memory consumption:
+
+- **`NetworkManager-wait-online.service` Disabled:** Disabled by default via `/usr/lib/systemd/system-preset/50-gofr.preset` and installer provisioning. Standard Fedora desktop sessions do not require blocking boot progress waiting for all network interfaces to negotiate full connectivity; user applications and background daemons connect asynchronously.
+- **`ModemManager.service` Disabled:** Disabled by default (`systemctl disable --now ModemManager.service`). Desktop and virtual machine installations rarely possess cellular/broadband modems; disabling ModemManager saves RAM and prevents serial/USB bus scanning during startup. Users requiring cellular connections can easily re-enable it via `sudo systemctl enable --now ModemManager.service`.
